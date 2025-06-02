@@ -1,0 +1,5 @@
+name|type|data|command|depend|seed|path|time|size|bytes|format|repository|iteration|parent|children|seconds|warnings|error
+path_infosiga|stem|f265d6f69879204a|84fad55717a21fe8|2c530c1562a7fbd1|-1665749802|data/dados_infosiga.zip|t20238.6818955554s|s89162857b|89162857|file|local|vector|||0.635||
+.Random.seed|object|6881c4c2cc8ed093
+read_infosiga|function|160c825456dc16d8
+df_infosiga|stem|52c07bfd762ec527|383142744f685c0b|55d77adddee59446|-811771779||t20241.7944194079s|s73571603b|73571603|rds|local|vector|||18.948||

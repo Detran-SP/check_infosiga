@@ -84,7 +84,6 @@ read_infosiga <- function(path, file = c("pessoas", "veiculos", "sinistros")) {
             "c", # cor_veiculo
             col_date(format = "%d/%m/%Y"), # data_sinistro
             "n", # ano_sinistro
-            "n", # ano_sinistro
             "n", # mes_sinistro
             "n", # dia_sinistro
             "c", # ano_mes_sinistro
@@ -173,6 +172,30 @@ create_valid_data <- function() {
             "OUTROS",
             "NAO DISPONIVEL",
             "ONIBUS"
+        ),
+        "lista_tipo_registro" = c(
+            "SINISTRO FATAL",
+            "NOTIFICACAO",
+            "SINISTRO NAO FATAL"
+        ),
+        "lista_regiao_administrativa" = c(
+            "Campinas",
+            "Barretos",
+            "Metropolitana de São Paulo",
+            "Baixada Santista",
+            "Bauru",
+            "Araçatuba",
+            "Ribeirão Preto",
+            "São José dos Campos",
+            "Central",
+            "São José do Rio Preto",
+            "Registro",
+            "Presidente Prudente",
+            "Itapeva",
+            "Sorocaba",
+            "Marília",
+            "Franca",
+            NA_character_
         )
     )
 }
@@ -414,6 +437,13 @@ create_veiculos_agent <- function(
             label = "min/max de `ano_modelo` - desconsidera os vazios."
         ) |>
         col_vals_between(
+            columns = ano_fab,
+            right = vars(ano_sinistro),
+            left = 1956,
+            na_pass = TRUE,
+            label = "min/max de `ano_fab` - desconsidera os vazios."
+        ) |>
+        col_vals_between(
             columns = data_sinistro,
             left = as.Date("2014-12-21"),
             right = floor_date(data_release, "month") - days(1),
@@ -454,6 +484,170 @@ create_veiculos_agent <- function(
         interrogate() |>
         get_agent_report(
             title = "Dados abertos Infosiga.SP - Validação da tabela 'veiculos'"
+        ) |>
+        export_report(
+            filename = affix_datetime(path, utc_time = FALSE)
+        )
+}
+
+
+create_schema_sinistros <- function() {
+    col_schema(
+        id_sinistro = "numeric",
+        tipo_registro = "character",
+        data_sinistro = "Date",
+        ano_sinistro = "numeric",
+        mes_sinistro = "numeric",
+        dia_sinistro = "numeric",
+        ano_mes_sinistro = "character",
+        hora_sinistro = "time",
+        logradouro = "character",
+        numero_logradoutro = "numeric",
+        tipo_via = "character",
+        latitude = "numeric",
+        longitude = "numeric",
+        municipio = "character",
+        regiao_administrativa = "character",
+        tp_veiculo_bicicleta = "numeric",
+        tp_veiculo_caminhao = "numeric",
+        tp_veiculo_motocicleta = "numeric",
+        tp_veiculo_nao_disponivel = "numeric",
+        tp_veiculo_onibus = "numeric",
+        tp_veiculo_outros = "numeric",
+        tp_veiculo_automovel = "numeric",
+        gravidade_nao_disponivel = "numeric",
+        gravidade_leve = "numeric",
+        gravidade_fatal = "numeric",
+        gravidade_ileso = "numeric",
+        gravidade_grave = "numeric",
+        administracao = "character",
+        jurisdicao = "character",
+        tipo_acidente_primario = "character",
+        tp_sinistro_atropelamento = "character",
+        tp_sinistro_colisao_frontal = "character",
+        tp_sinistro_colisao_traseira = "character",
+        tp_sinistro_colisao_lateral = "character",
+        tp_sinistro_colisao_transversal = "character",
+        tp_sinistro_colisao_outros = "character",
+        tp_sinistro_choque = "character",
+        tp_sinistro_capotamento = "character",
+        tp_sinistro_engavetamento = "character",
+        tp_sinistro_tombamento = "character",
+        tp_sinistro_outros = "character",
+        tp_sinistros_nao_disponivel = "character"
+    )
+}
+
+create_sinistros_agent <- function(
+    df_sinistros,
+    valid_data,
+    data_release,
+    schema,
+    lista_municipios,
+    path
+) {
+    options(scipen = 9999999)
+
+    create_agent(
+        tbl = df_sinistros,
+        tbl_name = "sinistros",
+        lang = "pt",
+        locale = "pt_BR",
+        actions = action_levels(warn_at = 1, stop_at = 0.1)
+    ) |>
+        col_schema_match(
+            schema = schema,
+            label = "Tipo de dados"
+        ) |>
+        col_vals_expr(
+            expr = ~ nchar(as.character(id_sinistro)) == 7,
+            brief = "`id_sinistro` deve ter 7 dígitos",
+            label = "Tamanho de `id_sinistro`"
+        ) |>
+        col_vals_not_null(
+            columns = id_sinistro,
+            label = "`id_sinistro` não pode ter vazios"
+        ) |>
+        col_vals_in_set(
+            columns = tipo_registro,
+            set = valid_data$lista_tipo_registro,
+            label = "Inputs válidos de `tipo_registro`."
+        ) |>
+        col_vals_between(
+            columns = data_sinistro,
+            left = as.Date("2014-12-21"),
+            right = floor_date(data_release, "month") - days(1),
+            label = "min/max de `data_sinistro`"
+        ) |>
+        col_vals_between(
+            columns = ano_sinistro,
+            left = 2014,
+            right = year(floor_date(data_release, "month") - days(1)),
+            label = "min/max de `ano_sinistro`"
+        ) |>
+        col_vals_between(
+            columns = mes_sinistro,
+            left = 1,
+            right = 12,
+            label = "min/max de `mes_sinistro`"
+        ) |>
+        col_vals_between(
+            columns = dia_sinistro,
+            left = 1,
+            right = vars(max_dia),
+            preconditions = function(x)
+                x |> mutate(max_dia = days_in_month(data_sinistro)),
+            label = "min/max de `dia_sinistro`"
+        ) |>
+        col_vals_equal(
+            columns = ano_mes_sinistro,
+            preconditions = function(x)
+                x |> mutate(ano_mes = format(data_sinistro, "%Y/%m")),
+            value = vars(ano_mes),
+            label = "Validação com base em `data_sinistro`"
+        ) |>
+        col_vals_between(
+            columns = hora_sinistro,
+            left = 00:00,
+            right = 23:59,
+            na_pass = TRUE,
+            label = "Horários válidos."
+        ) |>
+        col_vals_in_set(
+            columns = tipo_via,
+            set = lista_tipo_via,
+            label = "Inputs válidos de `tipo_via`"
+        ) |>
+        col_vals_between(
+            columns = latitude,
+            left = -23.35,
+            right = -19.75,
+            na_pass = TRUE,
+            label = "Min/max válidos de latitude."
+        ) |>
+        col_vals_between(
+            columns = longitude,
+            left = -53.12,
+            right = -44.16,
+            na_pass = TRUE,
+            label = "Min/max válidos de longitude."
+        ) |>
+        col_vals_in_set(
+            columns = municipio,
+            set = lista_municipios,
+            label = "Valores válidos de nome de município."
+        ) |>
+        col_vals_in_set(
+            columns = regiao_administrativa,
+            set = lista_regiao_administrativa,
+            label = "Inputs válidos de região administrativa."
+        ) |>
+        col_vals_gte(
+            columns = tp_veiculo_bibi
+        )
+    interrogate() |>
+        get_agent_report(
+            title = "Dados abertos Infosiga.SP - Validação da tabela 'sinistros'"
         ) |>
         export_report(
             filename = affix_datetime(path, utc_time = FALSE)

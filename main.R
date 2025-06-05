@@ -196,6 +196,31 @@ create_valid_data <- function() {
             "Marília",
             "Franca",
             NA_character_
+        ),
+        "lista_administracao" = c(
+            "PREFEITURA",
+            "NAO DISPONIVEL",
+            'CONCESSIONÁRIA',
+            "DER",
+            "CONCESSIONÁRIA-ARTESP",
+            "DNIT",
+            "CONCESSIONÁRIA-ANTT",
+            "ARTESP",
+            NA_character_
+        ),
+        "lista_jurisdicao" = c(
+            "MUNICIPAL",
+            "NAO DISPONIVEL",
+            "ESTADUAL",
+            "FEDERAL",
+            NA_character_
+        ),
+        "lista_tipo_acidente_primario" = c(
+            "ATROPELAMENTO",
+            "NAO DISPONIVEL",
+            "OUTROS",
+            "COLISAO",
+            "CHOQUE"
         )
     )
 }
@@ -500,9 +525,9 @@ create_schema_sinistros <- function() {
         mes_sinistro = "numeric",
         dia_sinistro = "numeric",
         ano_mes_sinistro = "character",
-        hora_sinistro = "time",
+        hora_sinistro = c("hms", "difftime"), # <time> da classe hms
         logradouro = "character",
-        numero_logradoutro = "numeric",
+        numero_logradouro = "numeric",
         tipo_via = "character",
         latitude = "numeric",
         longitude = "numeric",
@@ -521,6 +546,7 @@ create_schema_sinistros <- function() {
         gravidade_ileso = "numeric",
         gravidade_grave = "numeric",
         administracao = "character",
+        conservacao = "character",
         jurisdicao = "character",
         tipo_acidente_primario = "character",
         tp_sinistro_atropelamento = "character",
@@ -534,7 +560,7 @@ create_schema_sinistros <- function() {
         tp_sinistro_engavetamento = "character",
         tp_sinistro_tombamento = "character",
         tp_sinistro_outros = "character",
-        tp_sinistros_nao_disponivel = "character"
+        tp_sinistro_nao_disponivel = "character"
     )
 }
 
@@ -567,6 +593,10 @@ create_sinistros_agent <- function(
         col_vals_not_null(
             columns = id_sinistro,
             label = "`id_sinistro` não pode ter vazios"
+        ) |>
+        rows_distinct(
+            columns = id_sinistro,
+            label = "`id_sinistro` deve ser um valor único"
         ) |>
         col_vals_in_set(
             columns = tipo_registro,
@@ -608,29 +638,39 @@ create_sinistros_agent <- function(
         ) |>
         col_vals_between(
             columns = hora_sinistro,
-            left = 00:00,
-            right = 23:59,
+            left = hms::as_hms("00:00:00"),
+            right = hms::as_hms("23:59:59"),
             na_pass = TRUE,
             label = "Horários válidos."
         ) |>
         col_vals_in_set(
             columns = tipo_via,
-            set = lista_tipo_via,
+            set = valid_data$lista_tipo_via,
             label = "Inputs válidos de `tipo_via`"
+        ) |>
+        col_vals_not_null(
+            columns = c(latitude, longitude),
+            label = "Verifica coordenadas vazias.",
+            segments = tipo_registro ~
+                c("SINISTRO FATAL", "SINISTRO NAO FATAL", "NOTIFICACAO")
         ) |>
         col_vals_between(
             columns = latitude,
-            left = -23.35,
-            right = -19.75,
+            left = -25.31,
+            right = -19.77,
             na_pass = TRUE,
-            label = "Min/max válidos de latitude."
+            label = "Min/max válidos de latitude.",
+            segments = tipo_registro ~
+                c("SINISTRO FATAL", "SINISTRO NAO FATAL", "NOTIFICACAO")
         ) |>
         col_vals_between(
             columns = longitude,
-            left = -53.12,
+            left = -53.11,
             right = -44.16,
             na_pass = TRUE,
-            label = "Min/max válidos de longitude."
+            label = "Min/max válidos de longitude.",
+            segments = tipo_registro ~
+                c("SINISTRO FATAL", "SINISTRO NAO FATAL", "NOTIFICACAO")
         ) |>
         col_vals_in_set(
             columns = municipio,
@@ -639,13 +679,41 @@ create_sinistros_agent <- function(
         ) |>
         col_vals_in_set(
             columns = regiao_administrativa,
-            set = lista_regiao_administrativa,
+            set = valid_data$lista_regiao_administrativa,
             label = "Inputs válidos de região administrativa."
         ) |>
         col_vals_gte(
-            columns = tp_veiculo_bibi
-        )
-    interrogate() |>
+            columns = starts_with("tp_veiculo"),
+            value = 0,
+            label = "Valores não-negativos.",
+            na_pass = TRUE
+        ) |>
+        col_vals_null(
+            columns = gravidade_ileso,
+            label = "`gravidade_ileso` é sempre vazio."
+        ) |>
+        col_vals_gte(
+            columns = starts_with("gravidade"),
+            value = 0,
+            label = "Valores não-negativos.",
+            na_pass = TRUE
+        ) |>
+        col_vals_in_set(
+            columns = administracao,
+            set = valid_data$lista_administracao,
+            label = "Inputs válidos de `adminstracao`"
+        ) |>
+        col_vals_in_set(
+            columns = jurisdicao,
+            set = valid_data$lista_jurisdicao,
+            label = "Inputs válidos de `jurisdicao`"
+        ) |>
+        col_vals_equal(
+            columns = starts_with("tp_sinistro"),
+            value = "S",
+            na_pass = TRUE
+        ) |>
+        interrogate() |>
         get_agent_report(
             title = "Dados abertos Infosiga.SP - Validação da tabela 'sinistros'"
         ) |>

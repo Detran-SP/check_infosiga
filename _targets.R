@@ -21,6 +21,7 @@ list(
     tar_target(lista_municipios, readRDS("data/municipios.rds")),
     tar_target(schema_pessoas, create_schema_pessoas()),
     tar_target(schema_veiculos, create_schema_veiculos()),
+    tar_target(schema_sinistros, create_schema_sinistros()),
     tar_target(
         agent_pessoas,
         create_pessoas_agent(
@@ -40,6 +41,17 @@ list(
             data_release,
             schema_veiculos,
             "report/veiculos.html"
+        )
+    ),
+    tar_target(
+        agent_sinistros,
+        create_sinistros_agent(
+            df_infosiga[[3]],
+            valid_data,
+            data_release,
+            schema_sinistros,
+            lista_municipios,
+            "report/sinistros.html"
         )
     )
 )

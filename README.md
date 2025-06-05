@@ -1,6 +1,6 @@
 # check_infosiga
 
-Verificação automatizada da qualidade dos dados do Infosiga-SP utilizando o pacote [`pointblank`](https://rich-iannone.github.io/pointblank/) e o pipeline `{targets}`.
+Verificação automatizada da qualidade dos dados do Infosiga-SP utilizando o pacote `{pointblank}` e o pipeline `{targets}`.
 
 ## Visão Geral
 
@@ -29,25 +29,27 @@ check_infosiga/
 
 ## Execução
 
-1. Instale o pacote `{renv}`:
+1. Insira `dados_infosiga.zip` em `data/`
+
+2. Instale o pacote `{renv}`:
 
 ```r
 install.packages("renv")
 ```
 
-2. Inicialize o ambiente:
+3. Inicialize o ambiente:
 
 ```r
 renv::restore()
 ```
 
-3. Execute o pipeline:
+4. Execute o pipeline:
 
 ```r
 targets::tar_make()
 ```
 
-4. Os relatórios serão gerados na pasta `report/`.
+5. Os relatórios serão gerados na pasta `report/`.
 
 ## Entradas Esperadas
 

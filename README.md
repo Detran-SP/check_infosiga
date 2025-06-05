@@ -31,25 +31,27 @@ check_infosiga/
 
 1. Insira `dados_infosiga.zip` em `data/`
 
-2. Instale o pacote `{renv}`:
+2. Modifique o valor de `data_release` em `_targets.R` de acordo com a data de fechamento do Infosiga.SP
+
+3. Instale o pacote `{renv}`:
 
 ```r
 install.packages("renv")
 ```
 
-3. Inicialize o ambiente:
+4. Inicialize o ambiente:
 
 ```r
 renv::restore()
 ```
 
-4. Execute o pipeline:
+5. Execute o pipeline:
 
 ```r
 targets::tar_make()
 ```
 
-5. Os relatórios serão gerados na pasta `report/`.
+6. Os relatórios serão gerados na pasta `report/`.
 
 ## Entradas Esperadas
 

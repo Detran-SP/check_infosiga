@@ -53,10 +53,6 @@ targets::tar_make()
 
 6. Os relatórios serão gerados na pasta `report/`.
 
-## Entradas Esperadas
-
-- `data/dados_infosiga.zip`: arquivo ZIP contendo os CSVs de dados abertos do Infosiga.SP.
-
 ## Relatórios Gerados
 
 O processo gera 3 arquivos HTML com o diagnóstico de qualidade dos dados:

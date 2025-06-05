@@ -8,17 +8,6 @@ df_infosiga|stem|afd05e13ab315591|383142744f685c0b|dc1d6e713274fc23|-811771779||
 valid_data|stem|cbaa5d83deac91ca|e196a5affc8faee4|c6de474a1cece3c6|-809372329||t20244.5476606057s|s918b|918|rds|local|vector|||0.012||
 agent_veiculos|stem|b9a6ec288604c0ea|adc93204600b208d|5200de050d9db45e|-1258851019||t20244.5521657595s|s48b|48|rds|local|vector|||9.53||
 agent_pessoas|stem|6b4d9d3f11b8121e|4d544d9482ed3636|f607b198c8bd6007|322928114||t20244.5525355221s|s72b|72|rds|local|vector|||23.722||
-schema_sinistros|stem|219b178bc456b145|16677623961c090e|4751a6a535db5671|641283274||t20244.5615516772s|s523b|523|rds|local|vector|||0.768||
-create_veiculos_agent|function|6516bc5884049ffd
-.Random.seed|object|7b96d9a6c15101a4
-create_schema_veiculos|function|b94547f01bd78f1c
-create_schema_pessoas|function|1cd29aec74f4cf5b
-create_sinistros_agent|function|cc590905bfe57359
-read_infosiga|function|3a78b1e7754a8226
-create_valid_data|function|04a9da0491e02df8
-create_schema_sinistros|function|39e900d97478b7a3
-create_pessoas_agent|function|cc43a5e59da0ada5
-agent_sinistros|stem|b9a6ec288604c0ea|b91648c286aaafc5|4959b89156ae7bf9|503286164||t20244.5700111554s|s48b|48|rds|local|vector|||39.679||
 create_veiculos_agent|function|6516bc5884049ffd
 .Random.seed|object|ab01b5a24d862746
 create_schema_veiculos|function|b94547f01bd78f1c
@@ -29,3 +18,4 @@ create_valid_data|function|04a9da0491e02df8
 create_schema_sinistros|function|8033cc903488a0a2
 create_pessoas_agent|function|cc43a5e59da0ada5
 schema_sinistros|stem|46022000a237bcbc|16677623961c090e|c6f48add2c47969d|641283274||t20244.5805903062s|s522b|522|rds|local|vector|||0.804||
+agent_sinistros|stem|b9a6ec288604c0ea|b91648c286aaafc5|f9140910e7414789|503286164||t20244.5812542197s|s48b|48|rds|local|vector|||45.805||

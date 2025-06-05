@@ -1,3 +1,19 @@
+#' Read Infosiga data from ZIP file
+#'
+#' Extracts and reads the specified file ("pessoas", "veiculos" or
+#' "sinistros") from a ZIP archive, applying the correct column types.
+#'
+#' @param path A string. Path to the ZIP file containing the data.
+#' @param file A string. One of "pessoas", "veiculos", or "sinistros".
+#'
+#' @return A data frame with parsed columns.
+#'
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' df <- read_infosiga("data/infosiga.zip", "sinistros")
+#' }
 read_infosiga <- function(path, file = c("pessoas", "veiculos", "sinistros")) {
     tempdir = tempdir()
     path_zip = path
@@ -101,6 +117,20 @@ read_infosiga <- function(path, file = c("pessoas", "veiculos", "sinistros")) {
     return(df)
 }
 
+#' Create reference lists for validation
+#'
+#' Returns predefined sets of valid values used in data validation rules for
+#' Infosiga datasets.
+#'
+#' @return A named list of character vectors with valid values for each field.
+#'
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' valid <- create_valid_data()
+#' valid$lista_tipo_via
+#' }
 create_valid_data <- function() {
     list(
         "lista_tipo_via" = c("NAO DISPONIVEL", "VIAS MUNICIPAIS", "RODOVIAS"),
@@ -225,6 +255,18 @@ create_valid_data <- function() {
     )
 }
 
+#' Create schema for 'pessoas' table
+#'
+#' Defines the expected structure and column types for the 'pessoas' dataset.
+#'
+#' @return A pointblank `col_schema` object specifying column names and types.
+#'
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' schema <- create_schema_pessoas()
+#' }
 create_schema_pessoas <- function() {
     col_schema(
         id_sinistro = "numeric",
@@ -251,6 +293,30 @@ create_schema_pessoas <- function() {
     )
 }
 
+#' Validate 'pessoas' dataset using pointblank
+#'
+#' Runs a series of data validation checks on the 'pessoas' dataset from
+#' Infosiga using rules defined via the pointblank package.
+#'
+#' @param df_pessoas A data frame with the raw 'pessoas' dataset.
+#' @param valid_data A named list of valid reference values (e.g. from
+#' `create_valid_data()`).
+#' @param data_release A Date indicating the current data reference cutoff.
+#' @param schema A col_schema object defining expected column types.
+#' @param lista_municipios A character vector with valid municipality names.
+#' @param path Path to save the validation report (HTML).
+#'
+#' @return The full path to the validation report file.
+#'
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' create_pessoas_agent(
+#'     df_pessoas, valid_data, Sys.Date(), schema,
+#'     lista_municipios, "relatorios/pessoas.html"
+#' )
+#' }
 create_pessoas_agent <- function(
     df_pessoas,
     valid_data,
@@ -408,6 +474,18 @@ create_pessoas_agent <- function(
     return(path)
 }
 
+#' Create schema for 'veiculos' table
+#'
+#' Defines the expected structure and column types for the 'veiculos' dataset.
+#'
+#' @return A pointblank `col_schema` object specifying column names and types.
+#'
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' schema <- create_schema_veiculos()
+#' }
 create_schema_veiculos <- function() {
     col_schema(
         id_sinistro = "numeric",
@@ -423,6 +501,29 @@ create_schema_veiculos <- function() {
     )
 }
 
+#' Validate 'veiculos' dataset using pointblank
+#'
+#' Runs validation rules on the 'veiculos' dataset from Infosiga using the
+#' pointblank package.
+#'
+#' @param df_veiculos A data frame with the raw 'veiculos' dataset.
+#' @param valid_data A named list of valid reference values (e.g. from
+#' `create_valid_data()`).
+#' @param data_release A Date indicating the current data reference cutoff.
+#' @param schema A col_schema object defining expected column types.
+#' @param path Path to save the validation report (HTML).
+#'
+#' @return The full path to the validation report file.
+#'
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' create_veiculos_agent(
+#'     df_veiculos, valid_data, Sys.Date(), schema,
+#'     "relatorios/veiculos.html"
+#' )
+#' }
 create_veiculos_agent <- function(
     df_veiculos,
     valid_data,
@@ -515,7 +616,18 @@ create_veiculos_agent <- function(
         )
 }
 
-
+#' Create schema for 'sinistros' table
+#'
+#' Defines the expected structure and column types for the 'sinistros' dataset.
+#'
+#' @return A pointblank `col_schema` object specifying column names and types.
+#'
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' schema <- create_schema_sinistros()
+#' }
 create_schema_sinistros <- function() {
     col_schema(
         id_sinistro = "numeric",
@@ -564,6 +676,30 @@ create_schema_sinistros <- function() {
     )
 }
 
+#' Validate 'sinistros' dataset using pointblank
+#'
+#' Runs validation rules on the 'sinistros' dataset from Infosiga using the
+#' pointblank package.
+#'
+#' @param df_sinistros A data frame with the raw 'sinistros' dataset.
+#' @param valid_data A named list of valid reference values (e.g. from
+#' `create_valid_data()`).
+#' @param data_release A Date indicating the current data reference cutoff.
+#' @param schema A col_schema object defining expected column types.
+#' @param lista_municipios A character vector with valid municipality names.
+#' @param path Path to save the validation report (HTML).
+#'
+#' @return The full path to the validation report file.
+#'
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' create_sinistros_agent(
+#'     df_sinistros, valid_data, Sys.Date(), schema,
+#'     lista_municipios, "relatorios/sinistros.html"
+#' )
+#' }
 create_sinistros_agent <- function(
     df_sinistros,
     valid_data,

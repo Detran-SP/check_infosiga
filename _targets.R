@@ -7,7 +7,7 @@ tar_option_set(
 tar_source(files = c("main.R"))
 
 list(
-    tar_target(data_release, as.Date("2025-06-16")),
+    tar_target(data_release, as.Date("2025-10-13")),
     tar_target(path_infosiga, "data/dados_infosiga.zip", format = "file"),
     tar_target(
         df_infosiga,

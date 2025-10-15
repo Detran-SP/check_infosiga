@@ -24,39 +24,54 @@ read_infosiga <- function(path, file = c("pessoas", "veiculos", "sinistros")) {
         cols = cols(
             "n", # id_sinistro
             "c", # tipo_registro
+            
             col_date(format = "%d/%m/%Y"), # data_sinistro
             "n", # ano_sinistro
             "n", # mes_sinistro
             "n", # dia_sinistro
-            "c", # ano_mes_sinistro
             "t", # hora_sinistro
+            "c", # ano_mes_sinistro
+            "c", # dia_da_semana
+            "c", # turno
+            
             "c", # logradouro
             "n", # numero_logradouro
             "c", # tipo_via
+            "c", # tipo_local
+            
             "d", # latitude
             "d", # longitude
+            "n", # cod_ibge
             "c", # municipio
             "c", # regiao_administrativa
-            "n", # tp_veiculo_bicicleta
-            "n", # tp_veiculo_caminhao
-            "n", # tp_veiculo_motocicleta
-            "n", # tp_veiculo_nao_disponivel
-            "n", # tp_veiculo_onibus
-            "n", # tp_veiculo_outros
-            "n", # tp_veiculo_automovel
-            "n", # gravidade_nao_disponivel
-            "n", # gravidade_leve
-            "n", # gravidade_fatal
-            "n", # gravidade_ileso
-            "n", # gravidade_grave,
+            
             "c", # administracao
-            "c", # conversacao
-            "c", # tipo_acidente_primario
+            "c", # conservacao
+            "c", # circunscricao
+            "c", # tp_sinistro_primario
+            
+            "n", # qtd_pedestre
+            "n", # qtd_bicicleta
+            "n", # qtd_motocicleta
+            "n", # qtd_automovel
+            "n", # qtd_onibus
+            "n", # qtd_caminhao
+            "n", # qtd_veic_outros
+            "n", # qtd_veic_nao_disponivel
+          
+            "n", # qtd_gravidade_fatal
+            "n", # qtd_gravidade_grave,
+            "n", # qtd_gravidade_leve
+            "n", # qtd_gravidade_ileso
+            "n", # qtd_gravidade_nao_disponivel
+
+            "c", # tp_sinistro_atropelamento
             "c", # tp_sinistro_colisao_frontal
             "c", # tp_sinistro_colisao_traseira
             "c", # tp_sinistro_colisao_lateral
             "c", # tp_sinistro_colisao_transversal
             "c", # tp_sinistro_colisao_outros
+            
             "c", # tp_sinistro_choque
             "c", # tp_sinistro_capotamento
             "c", # tp_sinistro_engavetamento
@@ -69,41 +84,58 @@ read_infosiga <- function(path, file = c("pessoas", "veiculos", "sinistros")) {
     if (file == "pessoas") {
         cols = cols(
             "n", # id_sinistro
+            "n", # id_veiculo
+            
+            "n", # cod_ibge
             "c", # municipio
+            "c", # regiao_administrativa
             "c", # tipo_via
-            "c", # tipo_veiculo_via
+            
+            "c", # tipo_veiculo_vitima
             "c", # sexo
             "n", # idade
-            col_date(format = "%d/%m/%Y"), # data_obito
             "c", # gravidade_lesao
-            "c", # `tipo_de vítima`
+            
+            "c", # tipo_de_vitima
             "c", # faixa_etaria_demografica
             "c", # faixa_etaria_legal
             "c", # profissao
+            "c", # grau de instrução
+            "c", # nacionalidade
+            
             col_date(format = "%d/%m/%Y"), # data_sinistro
             "n", # ano_sinistro
             "n", # mes_sinistro
             "n", # dia_sinistro
             "c", # ano_mes_sinistro
+            
+            col_date(format = "%d/%m/%Y"), # data_obito
             "n", # ano_obito
             "n", # mes_obito
             "n", # dia_obito
-            "c" # ano_mes_obito
+            "c", # ano_mes_obito
+            "c", # local_obito
+            "n" # tempo_sinistro_obito
         )
     }
 
     if (file == "veiculos") {
         cols = cols(
             "n", # id_sinistro
+            "n", # id_veiculo
+            
+            "c", # marca_modelo
             "n", # ano_fab
             "n", # ano_modelo
             "c", # cor_veiculo
+            "c", # tipo_veiculo
+            
             col_date(format = "%d/%m/%Y"), # data_sinistro
             "n", # ano_sinistro
             "n", # mes_sinistro
             "n", # dia_sinistro
-            "c", # ano_mes_sinistro
-            "c" # tipo_veiculo
+            "c" # ano_mes_sinistro
+            
         )
     }
 
@@ -133,9 +165,44 @@ read_infosiga <- function(path, file = c("pessoas", "veiculos", "sinistros")) {
 #' }
 create_valid_data <- function() {
     list(
-        "lista_tipo_via" = c("NAO DISPONIVEL", "VIAS MUNICIPAIS", "RODOVIAS"),
+        "lista_regiao_administrativa" = c(
+            "METROPOLITANA DE SÃO PAULO",
+            "CAMPINAS",
+            "SOROCABA",
+            "SÃO JOSÉ DOS CAMPOS",
+            "SÃO JOSÉ DO RIO PRETO",
+            "BAIXADA SANTISTA",
+            "RIBEIRÃO PRETO",
+            "CENTRAL",
+            "BAURU",
+            "MARÍLIA",
+            "PRESIDENTE PRUDENTE",
+            "ARAÇATUBA",
+            "FRANCA",
+            "ITAPEVA",
+            "REGISTRO",
+            "BARRETOS"
+        ),
+        "lista_dia_semana" = c(
+            "Domingo",
+            "Segunda-feira",
+            "Terça-feira",
+            "Quarta-feira",
+            "Quinta-feira",
+            "Sexta-feira",
+            "Sábado"
+        ),
+        "lista_turno" = c(
+            "MANHA",
+            "TARDE",
+            "NOITE",
+            "MADRUGADA"
+        ),
+        
+        "lista_tipo_via" = c("NAO DISPONIVEL", "VIAS URBANAS", "ESTRADAS E RODOVIAS"),
+        
         "lista_tipo_veiculo_vitima" = c(
-            "PEDESTRE",
+            #"PEDESTRE",
             "AUTOMOVEL",
             "CAMINHAO",
             "MOTOCICLETA",
@@ -146,7 +213,9 @@ create_valid_data <- function() {
             NA_character_
         ),
         "lista_sexo" = c("FEMININO", "MASCULINO", "NAO DISPONIVEL"),
+        
         "lista_gravidade_lesao" = c("LEVE", "GRAVE", "FATAL", "NAO DISPONIVEL"),
+        
         "lista_tipo_vitima" = c(
             "PEDESTRE",
             "CONDUTOR",
@@ -193,8 +262,14 @@ create_valid_data <- function() {
             "80 ou mais",
             "NAO DISPONIVEL"
         ),
+        "lista_grau_de_instrucao" = c("BÁSICO", "MÉDIO", "SUPERIOR", NA_character_),
+       
+        "lista_local_obito" = c("VIA", "ESTABELECIMENTO DE SAUDE", "OUTROS", "NAO DISPONIVEL", NA_character_),
+        
+        "lista_tipo_local" = c("PUBLICO", "PRIVADO", "NAO DISPONIVEL"),
+        
         "lista_tipo_veiculo" = c(
-            "PEDESTRE",
+            #"PEDESTRE",
             "AUTOMOVEL",
             "CAMINHAO",
             "MOTOCICLETA",
@@ -208,25 +283,6 @@ create_valid_data <- function() {
             "NOTIFICACAO",
             "SINISTRO NAO FATAL"
         ),
-        "lista_regiao_administrativa" = c(
-            "Campinas",
-            "Barretos",
-            "Metropolitana de São Paulo",
-            "Baixada Santista",
-            "Bauru",
-            "Araçatuba",
-            "Ribeirão Preto",
-            "São José dos Campos",
-            "Central",
-            "São José do Rio Preto",
-            "Registro",
-            "Presidente Prudente",
-            "Itapeva",
-            "Sorocaba",
-            "Marília",
-            "Franca",
-            NA_character_
-        ),
         "lista_administracao" = c(
             "PREFEITURA",
             "NAO DISPONIVEL",
@@ -238,19 +294,27 @@ create_valid_data <- function() {
             "ARTESP",
             NA_character_
         ),
-        "lista_jurisdicao" = c(
+        "lista_circunscricao" = c(
             "MUNICIPAL",
             "NAO DISPONIVEL",
             "ESTADUAL",
             "FEDERAL",
             NA_character_
         ),
-        "lista_tipo_acidente_primario" = c(
+        "lista_tp_sinistro_primario" = c(
             "ATROPELAMENTO",
             "NAO DISPONIVEL",
             "OUTROS",
             "COLISAO",
             "CHOQUE"
+        ),
+        "lista_conservacao" = c(
+            "Regional DER (Rodovia Estadual)",
+            "DNIT (Rodovia Federal)",
+            "Concessionária da Rodovia (Estadual e Federal)",
+            "Prefeitura (Municipal)",
+            "NAO DISPONIVEL",
+            NA_character_
         )
     )
 }
@@ -270,26 +334,33 @@ create_valid_data <- function() {
 create_schema_pessoas <- function() {
     col_schema(
         id_sinistro = "numeric",
+        id_veiculo = "numeric",
+        cod_ibge = "numeric",
         municipio = "character",
+        regiao_administrativa = "character",
         tipo_via = "character",
         tipo_veiculo_vitima = "character",
         sexo = "character",
         idade = "numeric",
-        data_obito = "Date",
         gravidade_lesao = "character",
-        `tipo_de vítima` = "character",
+        tipo_de_vitima = "character",
         faixa_etaria_demografica = "character",
         faixa_etaria_legal = "character",
         profissao = "character",
+        grau_de_instrucao = "character",
+        nacionalidade = "character",
         data_sinistro = "Date",
         ano_sinistro = "numeric",
         mes_sinistro = "numeric",
         dia_sinistro = "numeric",
         ano_mes_sinistro = "character",
+        data_obito = "Date",
         ano_obito = "numeric",
         mes_obito = "numeric",
         dia_obito = "numeric",
-        ano_mes_obito = "character"
+        ano_mes_obito = "character",
+        local_obito = "character",
+        tempo_sinistro_obito = "numeric"
     )
 }
 
@@ -325,7 +396,7 @@ create_pessoas_agent <- function(
     lista_municipios,
     path
 ) {
-    options(scipen = 9999999)
+    options(scipen = 9999)
 
     create_agent(
         tbl = df_pessoas,
@@ -347,10 +418,36 @@ create_pessoas_agent <- function(
             columns = id_sinistro,
             label = "`id_sinistro` não pode ter vazios"
         ) |>
+        col_vals_between(
+            columns = id_veiculo,
+            left = 1,
+            right = 9999999,
+            na_pass = TRUE,
+            label = "Min/max válidos de id_veiculo"
+        ) |>    
+        col_vals_expr(
+            expr = ~ nchar(as.character(cod_ibge)) == 7,
+            brief = "`cod_ibge` deve ter 7 dígitos",
+            label = "Tamanho do `cod_ibge`"
+        ) |>
         col_vals_in_set(
             columns = municipio,
             set = lista_municipios,
             label = "Valida o nome dos municípios"
+        ) |>
+            col_vals_in_set(
+            columns = municipio,
+            set = lista_municipios,
+            label = "Valida o nome dos municípios"
+        ) |>
+        col_vals_in_set(
+            columns = regiao_administrativa,
+            set = valid_data$lista_regiao_administrativa,
+            label = "Valida o nome das regiões administrativas"
+        ) |>
+        col_vals_not_null(
+            columns = regiao_administrativa,
+            label = "`regiao_administrativa` não pode ter vazios"
         ) |>
         col_vals_in_set(
             columns = tipo_via,
@@ -373,22 +470,15 @@ create_pessoas_agent <- function(
             na_pass = TRUE,
             label = "Valor mínimo da idade"
         ) |>
-        col_vals_between(
-            columns = data_obito,
-            na_pass = TRUE,
-            right = floor_date(data_release, "month") - days(1),
-            left = as.Date("2015-01-01"),
-            label = "min/max de `data_obito`"
-        ) |>
         col_vals_in_set(
             columns = gravidade_lesao,
             set = valid_data$lista_gravidade_lesao,
             label = "Inputs válidos de `gravidade_lesao`"
         ) |>
         col_vals_in_set(
-            columns = `tipo_de vítima`,
+            columns = tipo_de_vitima,
             set = valid_data$lista_tipo_vitima,
-            label = "Inputs válidos de `tipo_vitima`"
+            label = "Inputs válidos de `tipo_de_vitima`"
         ) |>
         col_vals_in_set(
             columns = faixa_etaria_demografica,
@@ -399,6 +489,11 @@ create_pessoas_agent <- function(
             columns = faixa_etaria_legal,
             set = valid_data$lista_faixa_etaria_legal,
             label = "Inputs válidos de `faixa_etaria_legal`"
+        ) |>
+        col_vals_in_set(
+            columns = grau_de_instrucao,
+            set = valid_data$lista_grau_de_instrucao,
+            label = "Inputs válidos de `grau_de_instrucao`"
         ) |>
         col_vals_between(
             columns = data_sinistro,
@@ -434,6 +529,13 @@ create_pessoas_agent <- function(
             label = "Validação com base em `data_sinistro`"
         ) |>
         col_vals_between(
+            columns = data_obito,
+            na_pass = TRUE,
+            right = floor_date(data_release, "month") - days(1),
+            left = as.Date("2015-01-01"),
+            label = "min/max de `data_obito`"
+        ) |>  
+        col_vals_between(
             columns = ano_obito,
             left = 2015,
             right = year(floor_date(data_release, "month") - days(1)),
@@ -464,6 +566,29 @@ create_pessoas_agent <- function(
             na_pass = TRUE,
             label = "Validação com base em `data_obito`"
         ) |>
+        col_vals_in_set(
+            columns = local_obito,
+            set = valid_data$lista_local_obito,
+            label = "Valida com base em `local_obito`"
+        ) |>
+        col_vals_not_null(
+            columns = vars(local_obito),
+            preconditions = ~ . %>% filter(gravidade_lesao == "FATAL"),
+            label = "`local_obito` não pode ter vazios quando `gravidade_lesao` é 'FATAL'"
+        ) |>
+        #col_vals_gte(
+        #    columns = tempo_sinistro_obito,
+        #    value = 0,
+        #    na_pass = TRUE,
+        #    label = "Valor mínimo de 'tempo_sinistro_obito'"
+        #) |>
+        col_vals_between(
+            columns = tempo_sinistro_obito,
+            right = 30,
+            left = 0,
+            na_pass = TRUE,
+            label = "min/max de `tempo_sinistro_obito` - desconsidera os vazios."
+        ) |>
         interrogate() |>
         get_agent_report(
             title = "Dados abertos Infosiga.SP - Validação da tabela 'pessoas'"
@@ -489,15 +614,17 @@ create_pessoas_agent <- function(
 create_schema_veiculos <- function() {
     col_schema(
         id_sinistro = "numeric",
+        id_veiculo = "numeric",
+        marca_modelo = "character",
         ano_fab = "numeric",
         ano_modelo = "numeric",
         cor_veiculo = "character",
+        tipo_veiculo = "character",
         data_sinistro = "Date",
         ano_sinistro = "numeric",
         mes_sinistro = "numeric",
         dia_sinistro = "numeric",
-        ano_mes_sinistro = "character",
-        tipo_veiculo = "character"
+        ano_mes_sinistro = "character"
     )
 }
 
@@ -531,7 +658,7 @@ create_veiculos_agent <- function(
     schema,
     path
 ) {
-    options(scipen = 9999999)
+    options(scipen = 9999)
 
     create_agent(
         tbl = df_veiculos,
@@ -553,6 +680,13 @@ create_veiculos_agent <- function(
             columns = id_sinistro,
             label = "`id_sinistro` não pode ter vazios"
         ) |>
+        col_vals_between(
+            columns = id_veiculo,
+            left = 1,
+            right = 9999999,
+            na_pass = TRUE,
+            label = "Min/max válidos de id_veiculo"
+        ) |>   
         col_vals_between(
             columns = ano_modelo,
             preconditions = function(x)
@@ -632,41 +766,53 @@ create_schema_sinistros <- function() {
     col_schema(
         id_sinistro = "numeric",
         tipo_registro = "character",
+        
         data_sinistro = "Date",
         ano_sinistro = "numeric",
         mes_sinistro = "numeric",
         dia_sinistro = "numeric",
-        ano_mes_sinistro = "character",
         hora_sinistro = c("hms", "difftime"), # <time> da classe hms
+        ano_mes_sinistro = "character",
+        dia_da_semana = "character",
+        turno = "character",
+        
         logradouro = "character",
         numero_logradouro = "numeric",
         tipo_via = "character",
+        tipo_local = "character",
         latitude = "numeric",
         longitude = "numeric",
+        cod_ibge = "numeric",
         municipio = "character",
         regiao_administrativa = "character",
-        tp_veiculo_bicicleta = "numeric",
-        tp_veiculo_caminhao = "numeric",
-        tp_veiculo_motocicleta = "numeric",
-        tp_veiculo_nao_disponivel = "numeric",
-        tp_veiculo_onibus = "numeric",
-        tp_veiculo_outros = "numeric",
-        tp_veiculo_automovel = "numeric",
-        gravidade_nao_disponivel = "numeric",
-        gravidade_leve = "numeric",
-        gravidade_fatal = "numeric",
-        gravidade_ileso = "numeric",
-        gravidade_grave = "numeric",
+        
         administracao = "character",
         conservacao = "character",
-        jurisdicao = "character",
-        tipo_acidente_primario = "character",
+        circunscricao = "character",
+        tp_sinistro_primario = "character",
+        
+        qtd_pedestre = "numeric",
+        qtd_bicicleta = "numeric",
+        qtd_motocicleta = "numeric",
+        qtd_automovel = "numeric",
+        qtd_onibus = "numeric",
+        qtd_caminhao = "numeric",
+        qtd_veic_outros = "numeric",
+        qtd_veic_nao_disponivel = "numeric",
+        
+        qtd_gravidade_fatal = "numeric",
+        qtd_gravidade_grave = "numeric",
+        qtd_gravidade_leve = "numeric",
+        qtd_gravidade_ileso = "numeric",
+        qtd_gravidade_nao_disponivel = "numeric",
+
         tp_sinistro_atropelamento = "character",
         tp_sinistro_colisao_frontal = "character",
         tp_sinistro_colisao_traseira = "character",
         tp_sinistro_colisao_lateral = "character",
         tp_sinistro_colisao_transversal = "character",
         tp_sinistro_colisao_outros = "character",
+        
         tp_sinistro_choque = "character",
         tp_sinistro_capotamento = "character",
         tp_sinistro_engavetamento = "character",
@@ -708,7 +854,7 @@ create_sinistros_agent <- function(
     lista_municipios,
     path
 ) {
-    options(scipen = 9999999)
+    options(scipen = 9999)
 
     create_agent(
         tbl = df_sinistros,
@@ -765,13 +911,6 @@ create_sinistros_agent <- function(
                 x |> mutate(max_dia = days_in_month(data_sinistro)),
             label = "min/max de `dia_sinistro`"
         ) |>
-        col_vals_equal(
-            columns = ano_mes_sinistro,
-            preconditions = function(x)
-                x |> mutate(ano_mes = format(data_sinistro, "%Y/%m")),
-            value = vars(ano_mes),
-            label = "Validação com base em `data_sinistro`"
-        ) |>
         col_vals_between(
             columns = hora_sinistro,
             left = hms::as_hms("00:00:00"),
@@ -779,10 +918,40 @@ create_sinistros_agent <- function(
             na_pass = TRUE,
             label = "Horários válidos."
         ) |>
+        col_vals_equal(
+            columns = ano_mes_sinistro,
+            preconditions = function(x)
+                x |> mutate(ano_mes = format(data_sinistro, "%Y/%m")),
+            value = vars(ano_mes),
+            label = "Validação com base em `data_sinistro`"
+        ) |>
+        col_vals_in_set(
+            columns = dia_da_semana,
+            set = valid_data$lista_dia_semana,
+            label = "Inputs válidos de `dia_semana`"
+        ) |>
+        col_vals_not_null(
+            columns = dia_da_semana,
+            label = "`dia_da_semana` não pode ter vazios"
+        ) |>
+        col_vals_in_set(
+            columns = turno,
+            set = valid_data$lista_turno,
+            label = "Inputs válidos de `turno`"
+        ) |>
         col_vals_in_set(
             columns = tipo_via,
             set = valid_data$lista_tipo_via,
             label = "Inputs válidos de `tipo_via`"
+        ) |>
+        col_vals_in_set(
+            columns = tipo_local,
+            set = valid_data$lista_tipo_local,
+            label = "Inputs válidos de `tipo_local`"
+        ) |>
+        col_vals_not_null(
+            columns = tipo_local,
+            label = "`tipo_local` não pode ter vazios"
         ) |>
         col_vals_not_null(
             columns = c(latitude, longitude),
@@ -818,34 +987,63 @@ create_sinistros_agent <- function(
             set = valid_data$lista_regiao_administrativa,
             label = "Inputs válidos de região administrativa."
         ) |>
+        col_vals_not_null(
+            columns = regiao_administrativa,
+            label = "`regiao_administrativa` não pode ter vazios"
+        ) |>
         col_vals_gte(
-            columns = starts_with("tp_veiculo"),
-            value = 0,
-            label = "Valores não-negativos.",
+            columns = starts_with("qtd_"),
+            value = 1,
+            label = "Valores não-nulos.",
             na_pass = TRUE
         ) |>
         col_vals_null(
-            columns = gravidade_ileso,
-            label = "`gravidade_ileso` é sempre vazio."
+            columns = qtd_gravidade_ileso,
+            label = "`qtd_gravidade_ileso` é sempre vazio."
         ) |>
-        col_vals_gte(
-            columns = starts_with("gravidade"),
-            value = 0,
-            label = "Valores não-negativos.",
-            na_pass = TRUE
-        ) |>
+        #col_vals_gte(
+        #    columns = starts_with("qtd_gravidade"),
+        #    value = 0,
+        #    label = "Valores não-negativos.",
+        #    na_pass = TRUE
+        #) |>
         col_vals_in_set(
             columns = administracao,
             set = valid_data$lista_administracao,
             label = "Inputs válidos de `adminstracao`"
         ) |>
         col_vals_in_set(
-            columns = jurisdicao,
-            set = valid_data$lista_jurisdicao,
-            label = "Inputs válidos de `jurisdicao`"
+            columns = circunscricao,
+            set = valid_data$lista_circunscricao,
+            label = "Inputs válidos de `circunscricao`"
         ) |>
         col_vals_equal(
-            columns = starts_with("tp_sinistro"),
+            columns = starts_with("tp_sinistro_a"),
+            value = "S",
+            na_pass = TRUE
+        ) |>
+        col_vals_equal(
+            columns = starts_with("tp_sinistro_c"),
+            value = "S",
+            na_pass = TRUE
+        ) |>
+        col_vals_equal(
+            columns = starts_with("tp_sinistro_e"),
+            value = "S",
+            na_pass = TRUE
+        ) |>
+        col_vals_equal(
+            columns = starts_with("tp_sinistro_t"),
+            value = "S",
+            na_pass = TRUE
+        ) |>
+        col_vals_equal(
+            columns = starts_with("tp_sinistro_o"),
+            value = "S",
+            na_pass = TRUE
+        ) |>
+        col_vals_equal(
+            columns = starts_with("tp_sinistro_n"),
             value = "S",
             na_pass = TRUE
         ) |>
@@ -857,3 +1055,4 @@ create_sinistros_agent <- function(
             filename = affix_datetime(path, utc_time = FALSE)
         )
 }
+

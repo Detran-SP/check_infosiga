@@ -7,7 +7,7 @@ tar_option_set(
 tar_source(files = c("main.R"))
 
 list(
-    tar_target(data_release, as.Date("2025-10-13")),
+    tar_target(data_release, as.Date("2026-01-14")),
     tar_target(path_infosiga, "data/dados_infosiga.zip", format = "file"),
     tar_target(
         df_infosiga,
@@ -18,7 +18,14 @@ list(
         )
     ),
     tar_target(valid_data, create_valid_data()),
-    tar_target(lista_municipios, readRDS("data/municipios.rds")),
+    tar_target(
+        lista_municipios_raw,
+        readRDS("data/municipios.rds")
+    ),
+    tar_target(
+        lista_municipios,
+        lista_municipios_raw[!is.na(lista_municipios_raw)]
+    ),
     tar_target(schema_pessoas, create_schema_pessoas()),
     tar_target(schema_veiculos, create_schema_veiculos()),
     tar_target(schema_sinistros, create_schema_sinistros()),

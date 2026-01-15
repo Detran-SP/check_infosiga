@@ -7,16 +7,182 @@ from data_processing import read_infosiga
 from schemas import create_valid_data, create_schema_pessoas, create_schema_veiculos, create_schema_sinistros, load_municipios
 from validation import create_pessoas_agent, create_veiculos_agent, create_sinistros_agent
 
-app_ui = ui.page_fluid(
-    ui.h2("Validação de Dados Infosiga-SP"),
-    ui.p("Faça o upload do arquivo ZIP contendo os dados do Infosiga para validar a qualidade dos dados."),
-    ui.input_file(
-        "zipfile",
-        "Escolha o arquivo ZIP",
-        accept=[".zip"],
-        multiple=False
+# CSS customizado
+custom_css = """
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&display=swap');
+
+body {
+    font-family: 'Open Sans', sans-serif;
+    background-color: #ffffff;
+}
+
+.main-header {
+    background: transparent;
+    color: #212529;
+    padding: 2rem 0;
+    margin-bottom: 2rem;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.main-header h1 {
+    font-weight: 700;
+    margin-bottom: 0;
+    font-size: 2rem;
+}
+
+.upload-card {
+    background: transparent;
+    border: 2px solid #dee2e6;
+    border-radius: 10px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+.upload-card label {
+    font-weight: 600;
+    color: #212529;
+    margin-bottom: 1rem;
+    display: block;
+    font-size: 1rem;
+}
+
+.upload-card .shiny-input-container {
+    width: 100%;
+    max-width: 100%;
+}
+
+.upload-card .input-group {
+    display: flex;
+    align-items: stretch;
+}
+
+.upload-card .form-control {
+    height: 50px;
+}
+
+.upload-card .btn-file {
+    height: 50px;
+    display: flex;
+    align-items: center;
+    padding: 0 1rem;
+}
+
+.nav-tabs {
+    border: none;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.nav-tabs .nav-link {
+    border: 2px solid #dee2e6;
+    background: transparent;
+    border-radius: 10px;
+    padding: 0 1.5rem;
+    color: #212529;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    height: 50px;
+}
+
+.nav-tabs .nav-link:hover {
+    border-color: #495057;
+}
+
+.nav-tabs .nav-link.active {
+    background: transparent;
+    color: #212529;
+    border-color: #212529;
+    border-width: 3px;
+}
+
+.nav-tabs .nav-link i {
+    font-size: 1.25rem;
+}
+
+.tab-content {
+    background: transparent;
+    border: 2px solid #dee2e6;
+    border-radius: 10px;
+    padding: 2rem;
+}
+
+.alert-info {
+    background: transparent;
+    border: 2px solid #dee2e6;
+    border-radius: 10px;
+    color: #212529;
+    padding: 1.5rem;
+    font-weight: 500;
+}
+
+.alert-danger {
+    background: transparent;
+    border: 2px solid #495057;
+    border-radius: 10px;
+    color: #212529;
+    padding: 1.5rem;
+}
+
+.spinner-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem;
+    gap: 1rem;
+}
+
+.spinner-border {
+    width: 3rem;
+    height: 3rem;
+    border-width: 0.3rem;
+    border-color: #212529;
+    border-right-color: transparent;
+}
+
+.text-primary {
+    color: #212529 !important;
+}
+"""
+
+app_ui = ui.page_bootstrap(
+    ui.tags.head(
+        ui.tags.style(custom_css),
+        ui.tags.link(
+            rel="stylesheet",
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+        )
     ),
-    ui.output_ui("reports_tabs")
+    ui.div(
+        {"class": "main-header"},
+        ui.div(
+            {"class": "container"},
+            ui.h1("Validação dos dados abertos do Infosiga")
+        )
+    ),
+    ui.div(
+        {"class": "container"},
+        ui.div(
+            {"class": "upload-card"},
+            ui.input_file(
+                "zipfile",
+                ui.tags.span(
+                    ui.tags.i({"class": "fas fa-file-zipper me-2"}),
+                    "Arquivo ZIP dos Dados"
+                ),
+                accept=[".zip"],
+                multiple=False,
+                button_label="Selecionar Arquivo",
+                placeholder="Nenhum arquivo selecionado"
+            )
+        ),
+        ui.output_ui("reports_tabs")
+    ),
+    title="Validação Infosiga-SP"
 )
 
 def server(input, output, session):
@@ -99,28 +265,51 @@ def server(input, output, session):
         reports = validation_reports()
         
         if reports is None:
-            return ui.p("Aguardando upload do arquivo ZIP...")
+            return ui.div(
+                {"class": "alert alert-info"},
+                ui.tags.i({"class": "fas fa-info-circle me-2"}),
+                "Aguardando upload do arquivo ZIP com os dados do Infosiga..."
+            )
         
         if "error" in reports:
             return ui.div(
-                ui.h4("Erro ao processar dados"),
-                ui.p(str(reports["error"])),
-                style="color: red;"
+                {"class": "alert alert-danger"},
+                ui.h5(
+                    ui.tags.i({"class": "fas fa-exclamation-triangle me-2"}),
+                    "Erro ao processar dados"
+                ),
+                ui.tags.pre(
+                    str(reports["error"]),
+                    style="white-space: pre-wrap; word-wrap: break-word;"
+                )
             )
         
         return ui.navset_tab(
             ui.nav_panel(
-                "Sinistros",
-                ui.HTML(reports["sinistros"])
+                ui.tags.span(
+                    ui.tags.i({"class": "fas fa-car-crash"}),
+                    " Sinistros"
+                ),
+                ui.HTML(reports["sinistros"]),
+                value="sinistros"
             ),
             ui.nav_panel(
-                "Veículos",
-                ui.HTML(reports["veiculos"])
+                ui.tags.span(
+                    ui.tags.i({"class": "fas fa-car"}),
+                    " Veículos"
+                ),
+                ui.HTML(reports["veiculos"]),
+                value="veiculos"
             ),
             ui.nav_panel(
-                "Pessoas",
-                ui.HTML(reports["pessoas"])
-            )
+                ui.tags.span(
+                    ui.tags.i({"class": "fas fa-users"}),
+                    " Pessoas"
+                ),
+                ui.HTML(reports["pessoas"]),
+                value="pessoas"
+            ),
+            id="report_tabs"
         )
 
 app = App(app_ui, server)

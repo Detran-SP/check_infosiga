@@ -201,7 +201,7 @@ def create_pessoas_agent(
     )
     
     agent = agent.interrogate()
-    report = agent.get_tabular_report(title="Dados abertos Infosiga.SP - Validação da tabela 'pessoas'")
+    report = agent.get_tabular_report(title="Dados abertos Infosiga - Validação da tabela 'pessoas'")
     return report._repr_html_()
 
 
@@ -271,7 +271,7 @@ def create_veiculos_agent(
     )
     
     agent = agent.interrogate()
-    report = agent.get_tabular_report(title="Dados abertos Infosiga.SP - Validação da tabela 'veiculos'")
+    report = agent.get_tabular_report(title="Dados abertos Infosiga - Validação da tabela 'veiculos'")
     return report._repr_html_()
 
 

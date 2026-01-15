@@ -114,7 +114,9 @@ read_infosiga <- function(path, file = c("pessoas", "veiculos", "sinistros")) {
             "n", # mes_obito
             "n", # dia_obito
             "c", # ano_mes_obito
+
             "c", # local_obito
+            "c", # local_via
             "n" # tempo_sinistro_obito
         )
     }
@@ -164,6 +166,42 @@ read_infosiga <- function(path, file = c("pessoas", "veiculos", "sinistros")) {
 #' }
 create_valid_data <- function() {
     list(
+        "lista_tipo_registro" = c(
+            "SINISTRO FATAL",
+            "SINISTRO NAO FATAL",
+            "NOTIFICACAO"
+        ),
+
+        "lista_dia_semana" = c(
+            "Domingo",
+            "Segunda-feira",
+            "Terça-feira",
+            "Quarta-feira",
+            "Quinta-feira",
+            "Sexta-feira",
+            "Sábado"
+        ),
+
+        "lista_turno" = c(
+            "MANHA",
+            "TARDE",
+            "NOITE",
+            "MADRUGADA",
+            "NAO DISPONIVEL"
+        ),
+
+        "lista_tipo_via" = c(
+            "VIAS URBANAS",
+            "ESTRADAS E RODOVIAS",
+            "NAO DISPONIVEL"
+        ),
+
+        "lista_tipo_local" = c(
+            "PUBLICO",
+            "PRIVADO",
+            "NAO DISPONIVEL"
+        ),
+
         "lista_regiao_administrativa" = c(
             "METROPOLITANA DE SÃO PAULO",
             "CAMPINAS",
@@ -182,50 +220,68 @@ create_valid_data <- function() {
             "REGISTRO",
             "BARRETOS"
         ),
-        "lista_dia_semana" = c(
-            "Domingo",
-            "Segunda-feira",
-            "Terça-feira",
-            "Quarta-feira",
-            "Quinta-feira",
-            "Sexta-feira",
-            "Sábado"
-        ),
-        "lista_turno" = c(
-            "MANHA",
-            "TARDE",
-            "NOITE",
-            "MADRUGADA"
+
+        "lista_administracao" = c(
+            "PREFEITURA",
+            "NAO DISPONIVEL",
+            'CONCESSIONÁRIA',
+            "DER",
+            "CONCESSIONÁRIA-ARTESP",
+            "DNIT",
+            "CONCESSIONÁRIA-ANTT",
+            "ARTESP",
+            NA_character_
         ),
 
-        "lista_tipo_via" = c(
+        #        "lista_conservacao" = c(
+        #            "Regional DER (Rodovia Estadual)",
+        #            "DNIT (Rodovia Federal)",
+        #            "Concessionária da Rodovia (Estadual e Federal)",
+        #            "Prefeitura (Municipal)",
+        #            "NAO DISPONIVEL",
+        #            NA_character_
+        #        ),
+
+        "lista_circunscricao" = c(
+            "MUNICIPAL",
+            "ESTADUAL",
+            "FEDERAL",
             "NAO DISPONIVEL",
-            "VIAS URBANAS",
-            "ESTRADAS E RODOVIAS"
+            NA_character_
+        ),
+
+        "lista_tp_sinistro_primario" = c(
+            "ATROPELAMENTO",
+            "COLISAO",
+            "CHOQUE",
+            "OUTROS",
+            "NAO DISPONIVEL"
         ),
 
         "lista_tipo_veiculo_vitima" = c(
-            #"PEDESTRE",
+            #           "PEDESTRE",
             "AUTOMOVEL",
+            "BICICLETA",
             "CAMINHAO",
             "MOTOCICLETA",
-            "BICICLETA",
+            "ONIBUS",
             "OUTROS",
             "NAO DISPONIVEL",
-            "ONIBUS",
             NA_character_
         ),
+
         "lista_sexo" = c("FEMININO", "MASCULINO", "NAO DISPONIVEL"),
 
-        "lista_gravidade_lesao" = c("LEVE", "GRAVE", "FATAL", "NAO DISPONIVEL"),
+        "lista_gravidade_lesao" = c("FATAL", "GRAVE", "LEVE", "NAO DISPONIVEL"),
 
         "lista_tipo_vitima" = c(
-            "PEDESTRE",
             "CONDUTOR",
             "PASSAGEIRO",
+            "PEDESTRE",
             "NAO DISPONIVEL",
             NA_character_
         ),
+
         "lista_faixa_etaria_demografica" = c(
             "00 a 04",
             "05 a 09",
@@ -248,6 +304,7 @@ create_valid_data <- function() {
             "90 e +",
             "NAO DISPONIVEL"
         ),
+
         "lista_faixa_etaria_legal" = c(
             "0-17",
             "18-24",
@@ -265,6 +322,7 @@ create_valid_data <- function() {
             "80 ou mais",
             "NAO DISPONIVEL"
         ),
+
         "lista_grau_de_instrucao" = c(
             "BÁSICO",
             "MÉDIO",
@@ -280,55 +338,15 @@ create_valid_data <- function() {
             NA_character_
         ),
 
-        "lista_tipo_local" = c("PUBLICO", "PRIVADO", "NAO DISPONIVEL"),
-
         "lista_tipo_veiculo" = c(
-            #"PEDESTRE",
+            #           "PEDESTRE",
             "AUTOMOVEL",
+            "BICICLETA",
             "CAMINHAO",
             "MOTOCICLETA",
-            "BICICLETA",
+            "ONIBUS",
             "OUTROS",
-            "NAO DISPONIVEL",
-            "ONIBUS"
-        ),
-        "lista_tipo_registro" = c(
-            "SINISTRO FATAL",
-            "NOTIFICACAO",
-            "SINISTRO NAO FATAL"
-        ),
-        "lista_administracao" = c(
-            "PREFEITURA",
-            "NAO DISPONIVEL",
-            'CONCESSIONÁRIA',
-            "DER",
-            "CONCESSIONÁRIA-ARTESP",
-            "DNIT",
-            "CONCESSIONÁRIA-ANTT",
-            "ARTESP",
-            NA_character_
-        ),
-        "lista_circunscricao" = c(
-            "MUNICIPAL",
-            "NAO DISPONIVEL",
-            "ESTADUAL",
-            "FEDERAL",
-            NA_character_
-        ),
-        "lista_tp_sinistro_primario" = c(
-            "ATROPELAMENTO",
-            "NAO DISPONIVEL",
-            "OUTROS",
-            "COLISAO",
-            "CHOQUE"
-        ),
-        "lista_conservacao" = c(
-            "Regional DER (Rodovia Estadual)",
-            "DNIT (Rodovia Federal)",
-            "Concessionária da Rodovia (Estadual e Federal)",
-            "Prefeitura (Municipal)",
-            "NAO DISPONIVEL",
-            NA_character_
+            "NAO DISPONIVEL"
         )
     )
 }
@@ -374,6 +392,7 @@ create_schema_pessoas <- function() {
         dia_obito = "numeric",
         ano_mes_obito = "character",
         local_obito = "character",
+        local_via = "character",
         tempo_sinistro_obito = "numeric"
     )
 }
@@ -423,15 +442,17 @@ create_pessoas_agent <- function(
             schema = schema,
             label = "Tipo de dados"
         ) |>
+
         col_vals_expr(
             expr = ~ nchar(as.character(id_sinistro)) == 7,
-            brief = "`id_sinistro` deve ter 7 dígitos",
+            brief = "Espera-se que `id_sinistro` tenha 7 dígitos.",
             label = "Tamanho de `id_sinistro`"
         ) |>
         col_vals_not_null(
             columns = id_sinistro,
-            label = "`id_sinistro` não pode ter vazios"
+            label = "`id_sinistro` não deve ter vazios"
         ) |>
+
         col_vals_between(
             columns = id_veiculo,
             left = 1,
@@ -439,11 +460,13 @@ create_pessoas_agent <- function(
             na_pass = TRUE,
             label = "Min/max válidos de id_veiculo"
         ) |>
+
         col_vals_expr(
             expr = ~ nchar(as.character(cod_ibge)) == 7,
-            brief = "`cod_ibge` deve ter 7 dígitos",
+            brief = "Espera-se que `cod_ibge` tenha 7 dígitos.",
             label = "Tamanho do `cod_ibge`"
         ) |>
+
         col_vals_in_set(
             columns = municipio,
             set = lista_municipios,
@@ -454,6 +477,7 @@ create_pessoas_agent <- function(
             set = lista_municipios,
             label = "Valida o nome dos municípios"
         ) |>
+
         col_vals_in_set(
             columns = regiao_administrativa,
             set = valid_data$lista_regiao_administrativa,
@@ -461,39 +485,47 @@ create_pessoas_agent <- function(
         ) |>
         col_vals_not_null(
             columns = regiao_administrativa,
-            label = "`regiao_administrativa` não pode ter vazios"
+            label = "`regiao_administrativa` não deve ter vazios"
         ) |>
+
         col_vals_in_set(
             columns = tipo_via,
             set = valid_data$lista_tipo_via,
             label = "Garante os valores de `tipo_via`"
         ) |>
+
         col_vals_in_set(
             columns = tipo_veiculo_vitima,
             set = valid_data$lista_tipo_veiculo_vitima,
             label = "Garante os valores de `tipo_veiculo_vitima`"
         ) |>
+
         col_vals_in_set(
             columns = sexo,
             set = valid_data$lista_sexo,
             label = "Garante os valores de `sexo`"
         ) |>
+
         col_vals_gte(
             columns = idade,
             value = 0,
             na_pass = TRUE,
+            brief = "Esperam-se valores de `idade`>=0.",
             label = "Valor mínimo da idade"
         ) |>
+
         col_vals_in_set(
             columns = gravidade_lesao,
             set = valid_data$lista_gravidade_lesao,
             label = "Inputs válidos de `gravidade_lesao`"
         ) |>
+
         col_vals_in_set(
             columns = tipo_de_vitima,
             set = valid_data$lista_tipo_vitima,
             label = "Inputs válidos de `tipo_de_vitima`"
         ) |>
+
         col_vals_in_set(
             columns = faixa_etaria_demografica,
             set = valid_data$lista_faixa_etaria_demografica,
@@ -504,29 +536,34 @@ create_pessoas_agent <- function(
             set = valid_data$lista_faixa_etaria_legal,
             label = "Inputs válidos de `faixa_etaria_legal`"
         ) |>
+
         col_vals_in_set(
             columns = grau_de_instrucao,
             set = valid_data$lista_grau_de_instrucao,
             label = "Inputs válidos de `grau_de_instrucao`"
         ) |>
+
         col_vals_between(
             columns = data_sinistro,
             left = as.Date("2014-12-21"),
             right = floor_date(data_release, "month") - days(1),
             label = "min/max de `data_sinistro`"
         ) |>
+
         col_vals_between(
             columns = ano_sinistro,
             left = 2014,
             right = year(floor_date(data_release, "month") - days(1)),
             label = "min/max de `ano_sinistro`"
         ) |>
+
         col_vals_between(
             columns = mes_sinistro,
             left = 1,
             right = 12,
             label = "min/max de `mes_sinistro`"
         ) |>
+
         col_vals_between(
             columns = dia_sinistro,
             left = 1,
@@ -536,6 +573,7 @@ create_pessoas_agent <- function(
             },
             label = "min/max de `dia_sinistro`"
         ) |>
+
         col_vals_equal(
             columns = ano_mes_sinistro,
             preconditions = function(x) {
@@ -544,6 +582,7 @@ create_pessoas_agent <- function(
             value = vars(ano_mes),
             label = "Validação com base em `data_sinistro`"
         ) |>
+
         col_vals_between(
             columns = data_obito,
             na_pass = TRUE,
@@ -551,6 +590,12 @@ create_pessoas_agent <- function(
             left = as.Date("2015-01-01"),
             label = "min/max de `data_obito`"
         ) |>
+        col_vals_not_null(
+            columns = vars(data_obito),
+            preconditions = ~ . %>% filter(gravidade_lesao == "FATAL"),
+            label = "`data_obito` não deve ter vazios quando `gravidade_lesao` é 'FATAL'"
+        ) |>
+
         col_vals_between(
             columns = ano_obito,
             left = 2015,
@@ -558,6 +603,12 @@ create_pessoas_agent <- function(
             na_pass = TRUE,
             label = "min/max de `ano_obito`"
         ) |>
+        col_vals_not_null(
+            columns = vars(ano_obito),
+            preconditions = ~ . %>% filter(gravidade_lesao == "FATAL"),
+            label = "`ano_obito` não deve ter vazios quando `gravidade_lesao` é 'FATAL'"
+        ) |>
+
         col_vals_between(
             columns = mes_obito,
             left = 1,
@@ -565,6 +616,12 @@ create_pessoas_agent <- function(
             label = "min/max de `mes_obito`",
             na_pass = TRUE
         ) |>
+        col_vals_not_null(
+            columns = vars(mes_obito),
+            preconditions = ~ . %>% filter(gravidade_lesao == "FATAL"),
+            label = "`mes_obito` não deve ter vazios quando `gravidade_lesao` é 'FATAL'"
+        ) |>
+
         col_vals_between(
             columns = dia_obito,
             left = 1,
@@ -575,6 +632,12 @@ create_pessoas_agent <- function(
             label = "min/max de `dia_obito`",
             na_pass = TRUE
         ) |>
+        col_vals_not_null(
+            columns = vars(dia_obito),
+            preconditions = ~ . %>% filter(gravidade_lesao == "FATAL"),
+            label = "`dia_obito` não deve ter vazios quando `gravidade_lesao` é 'FATAL'"
+        ) |>
+
         col_vals_equal(
             columns = ano_mes_obito,
             preconditions = function(x) {
@@ -584,6 +647,12 @@ create_pessoas_agent <- function(
             na_pass = TRUE,
             label = "Validação com base em `data_obito`"
         ) |>
+        col_vals_not_null(
+            columns = vars(ano_mes_obito),
+            preconditions = ~ . %>% filter(gravidade_lesao == "FATAL"),
+            label = "`ano_mes_obito` não deve ter vazios quando `gravidade_lesao` é 'FATAL'"
+        ) |>
+
         col_vals_in_set(
             columns = local_obito,
             set = valid_data$lista_local_obito,
@@ -592,14 +661,15 @@ create_pessoas_agent <- function(
         col_vals_not_null(
             columns = vars(local_obito),
             preconditions = ~ . %>% filter(gravidade_lesao == "FATAL"),
-            label = "`local_obito` não pode ter vazios quando `gravidade_lesao` é 'FATAL'"
+            label = "`local_obito` não deve ter vazios quando `gravidade_lesao` é 'FATAL'"
         ) |>
-        #col_vals_gte(
-        #    columns = tempo_sinistro_obito,
-        #    value = 0,
-        #    na_pass = TRUE,
-        #    label = "Valor mínimo de 'tempo_sinistro_obito'"
-        #) |>
+
+        col_vals_in_set(
+            columns = local_via,
+            set = valid_data$lista_tipo_local,
+            label = "Valida com base em `tipo_local`"
+        ) |>
+
         col_vals_between(
             columns = tempo_sinistro_obito,
             right = 30,
@@ -607,6 +677,12 @@ create_pessoas_agent <- function(
             na_pass = TRUE,
             label = "min/max de `tempo_sinistro_obito` - desconsidera os vazios."
         ) |>
+        col_vals_not_null(
+            columns = vars(tempo_sinistro_obito),
+            preconditions = ~ . %>% filter(gravidade_lesao == "FATAL"),
+            label = "`tempo_sinistro_obito` não deve ter vazios quando `gravidade_lesao` é 'FATAL'"
+        ) |>
+
         interrogate() |>
         get_agent_report(
             title = "Dados abertos Infosiga.SP - Validação da tabela 'pessoas'"
@@ -689,15 +765,17 @@ create_veiculos_agent <- function(
             schema = schema,
             label = "Tipo de dados"
         ) |>
+
         col_vals_expr(
             expr = ~ nchar(as.character(id_sinistro)) == 7,
-            brief = "`id_sinistro` deve ter 7 dígitos",
+            brief = "Espera-se que `id_sinistro` tenha 7 dígitos.",
             label = "Tamanho de `id_sinistro`"
         ) |>
         col_vals_not_null(
             columns = id_sinistro,
-            label = "`id_sinistro` não pode ter vazios"
+            label = "`id_sinistro` não deve ter vazios"
         ) |>
+
         col_vals_between(
             columns = id_veiculo,
             left = 1,
@@ -705,6 +783,11 @@ create_veiculos_agent <- function(
             na_pass = TRUE,
             label = "Min/max válidos de id_veiculo"
         ) |>
+        col_vals_not_null(
+            columns = id_veiculo,
+            label = "`id_veiculo` não deve ter vazios"
+        ) |>
+
         col_vals_between(
             columns = ano_modelo,
             preconditions = function(x) {
@@ -722,12 +805,14 @@ create_veiculos_agent <- function(
             na_pass = TRUE,
             label = "min/max de `ano_fab` - desconsidera os vazios."
         ) |>
+
         col_vals_between(
             columns = data_sinistro,
             left = as.Date("2014-12-21"),
             right = floor_date(data_release, "month") - days(1),
             label = "min/max de `data_sinistro`"
         ) |>
+
         col_vals_between(
             columns = ano_sinistro,
             left = 2014,
@@ -749,6 +834,7 @@ create_veiculos_agent <- function(
             },
             label = "min/max de `dia_sinistro`"
         ) |>
+
         col_vals_equal(
             columns = ano_mes_sinistro,
             preconditions = function(x) {
@@ -757,11 +843,13 @@ create_veiculos_agent <- function(
             value = vars(ano_mes),
             label = "Validação com base em `data_sinistro`"
         ) |>
+
         col_vals_in_set(
             columns = tipo_veiculo,
             set = valid_data$lista_tipo_veiculo,
             label = "Inputs válidos de `tipo_veiculo`"
         ) |>
+
         interrogate() |>
         get_agent_report(
             title = "Dados abertos Infosiga.SP - Validação da tabela 'veiculos'"
@@ -886,32 +974,38 @@ create_sinistros_agent <- function(
     ) |>
         col_schema_match(
             schema = schema,
-            label = "Tipo de dados"
+            label = "Tipo de dados" #1
         ) |>
+
         col_vals_expr(
             expr = ~ nchar(as.character(id_sinistro)) == 7,
-            brief = "`id_sinistro` deve ter 7 dígitos",
+            brief = "Espera-se que `id_sinistro` tenha 7 dígitos.", #2
             label = "Tamanho de `id_sinistro`"
         ) |>
         col_vals_not_null(
             columns = id_sinistro,
-            label = "`id_sinistro` não pode ter vazios"
+            label = "`id_sinistro` não deve ter vazios" #3
         ) |>
         rows_distinct(
             columns = id_sinistro,
+            brief = "Espera-se que os valores de `id_sinistro` sejam únicos.", #4
             label = "`id_sinistro` deve ser um valor único"
         ) |>
+
         col_vals_in_set(
             columns = tipo_registro,
             set = valid_data$lista_tipo_registro,
+            brief = "Esperam-se os valores 'SINISTRO FATAL', 'SINISTRO NAO FATAL' e 'NOTIFICACAO'.", #5
             label = "Inputs válidos de `tipo_registro`."
         ) |>
+
         col_vals_between(
             columns = data_sinistro,
             left = as.Date("2014-12-21"),
             right = floor_date(data_release, "month") - days(1),
             label = "min/max de `data_sinistro`"
         ) |>
+
         col_vals_between(
             columns = ano_sinistro,
             left = 2014,
@@ -940,6 +1034,7 @@ create_sinistros_agent <- function(
             na_pass = TRUE,
             label = "Horários válidos."
         ) |>
+
         col_vals_equal(
             columns = ano_mes_sinistro,
             preconditions = function(x) {
@@ -948,6 +1043,7 @@ create_sinistros_agent <- function(
             value = vars(ano_mes),
             label = "Validação com base em `data_sinistro`"
         ) |>
+
         col_vals_in_set(
             columns = dia_da_semana,
             set = valid_data$lista_dia_semana,
@@ -955,27 +1051,35 @@ create_sinistros_agent <- function(
         ) |>
         col_vals_not_null(
             columns = dia_da_semana,
-            label = "`dia_da_semana` não pode ter vazios"
+            label = "`dia_da_semana` não deve ter vazios"
         ) |>
+
         col_vals_in_set(
             columns = turno,
             set = valid_data$lista_turno,
             label = "Inputs válidos de `turno`"
         ) |>
+        col_vals_not_null(
+            columns = turno,
+            label = "`turno` não deve ter vazios"
+        ) |>
+
         col_vals_in_set(
             columns = tipo_via,
             set = valid_data$lista_tipo_via,
             label = "Inputs válidos de `tipo_via`"
         ) |>
+        col_vals_not_null(
+            columns = tipo_via,
+            label = "`tipo_via` não deve ter vazios"
+        ) |>
+
         col_vals_in_set(
             columns = tipo_local,
             set = valid_data$lista_tipo_local,
             label = "Inputs válidos de `tipo_local`"
         ) |>
-        col_vals_not_null(
-            columns = tipo_local,
-            label = "`tipo_local` não pode ter vazios"
-        ) |>
+
         col_vals_not_null(
             columns = c(latitude, longitude),
             label = "Verifica coordenadas vazias.",
@@ -1000,11 +1104,17 @@ create_sinistros_agent <- function(
             segments = tipo_registro ~
                 c("SINISTRO FATAL", "SINISTRO NAO FATAL", "NOTIFICACAO")
         ) |>
+
         col_vals_in_set(
             columns = municipio,
             set = lista_municipios,
             label = "Valores válidos de nome de município."
         ) |>
+        col_vals_not_null(
+            columns = municipio,
+            label = "`municipio` não deve ter vazios"
+        ) |>
+
         col_vals_in_set(
             columns = regiao_administrativa,
             set = valid_data$lista_regiao_administrativa,
@@ -1012,24 +1122,9 @@ create_sinistros_agent <- function(
         ) |>
         col_vals_not_null(
             columns = regiao_administrativa,
-            label = "`regiao_administrativa` não pode ter vazios"
+            label = "`regiao_administrativa` não deve ter vazios"
         ) |>
-        col_vals_gte(
-            columns = starts_with("qtd_"),
-            value = 1,
-            label = "Valores não-nulos.",
-            na_pass = TRUE
-        ) |>
-        col_vals_null(
-            columns = qtd_gravidade_ileso,
-            label = "`qtd_gravidade_ileso` é sempre vazio."
-        ) |>
-        #col_vals_gte(
-        #    columns = starts_with("qtd_gravidade"),
-        #    value = 0,
-        #    label = "Valores não-negativos.",
-        #    na_pass = TRUE
-        #) |>
+
         col_vals_in_set(
             columns = administracao,
             set = valid_data$lista_administracao,
@@ -1040,16 +1135,130 @@ create_sinistros_agent <- function(
             set = valid_data$lista_circunscricao,
             label = "Inputs válidos de `circunscricao`"
         ) |>
+
+        col_vals_in_set(
+            columns = tp_sinistro_primario,
+            set = valid_data$lista_tp_sinistro_primario,
+            label = "Inputs válidos de tp_sinistro_primario."
+        ) |>
+        col_vals_not_null(
+            columns = tp_sinistro_primario,
+            label = "`tp_sinistro_primario` não deve ter vazios"
+        ) |>
+
+        col_vals_gt(
+            columns = starts_with("qtd_"),
+            value = 0,
+            label = "Valores não-nulos.",
+            na_pass = TRUE
+        ) |>
+
+        col_vals_not_null(
+            columns = vars(qtd_pedestre),
+            preconditions = ~ . %>%
+                filter(tp_sinistro_primario == "ATROPELAMENTO"),
+            label = "`qtd_pedestre` não deve ter vazios quando `tp_sinistro_primario` é 'ATROPELAMENTO'",
+            segments = tipo_registro ~ c(
+                "SINISTRO FATAL",
+                "SINISTRO NAO FATAL",
+                "NOTIFICACAO"
+            )
+        ) |>
+        #       col_vals_gt(
+        #           columns = vars(total_veic),
+        #           value = 0,
+        #           preconditions = ~ . %>%
+        #           mutate (total_veic = qtd_bicicleta + qtd_motocicleta + qtd_automovel + qtd_onibus + qtd_caminhao + qtd_veic_outros + qtd_veic_nao_disponivel) %>%
+        #           label = "soma do total de veículos não deve ser nula",
+        #           segments = tipo_registro ~ c("SINISTRO FATAL", "SINISTRO NAO FATAL", "NOTIFICACAO")
+        #       ) |>
+        #       col_vals_gt(
+        #           columns = vars(total_veic),
+        #           value = 1,
+        #           preconditions = ~ . %>%
+        #           mutate (total_veic = qtd_bicicleta + qtd_motocicleta + qtd_automovel + qtd_onibus + qtd_caminhao + qtd_veic_outros + qtd_veic_nao_disponivel) %>%
+        #           filter(tp_sinistro_primario == "COLISAO") %>%
+        #           label = "soma dos veículos deve ser >1 quando `tp_sinistro_primario` é 'COLISAO'",
+        #           segments = tipo_registro ~ c("SINISTRO FATAL", "SINISTRO NAO FATAL", "NOTIFICACAO")
+        #       ) |>
+
+        col_vals_not_null(
+            columns = vars(qtd_gravidade_fatal),
+            preconditions = ~ . %>% filter(tipo_registro == "SINISTRO FATAL"),
+            label = "`qtd_gravidade_fatal` não deve ter vazios quando `tipo_registro` é 'SINISTRO FATAL'",
+        ) |>
+        #       col_vals_gt(
+        #           columns = vars(total_grav),
+        #           value = 0,
+        #           preconditions = ~ . %>%
+        #           mutate (total_grav = qtd_gravidade_fatal + qtd_gravidade_grave + qtd_gravidade_leve) %>%
+        #           label = "soma dos `qtd_gravidade_*` não deve ser nula",
+        #           segments = tipo_registro ~ c("SINISTRO FATAL", "SINISTRO NAO FATAL", "NOTIFICACAO")
+        #       ) |>
+        col_vals_null(
+            columns = qtd_gravidade_ileso,
+            label = "`qtd_gravidade_ileso` é sempre vazio."
+        ) |>
+
+        #       col_vals_gt(
+        #           columns = vars(total_tp_sinistro),
+        #           value = 0,
+        #           preconditions = ~ . %>%
+        #           mutate(total_tp_sinistro = (tp_sinistro_atropelamento == "S")
+        #               + (tp_sinistro_colisao_frontal == "S") + (tp_sinistro_colisao_traseira == "S") + (tp_sinistro_colisao_lateral == "S") + (tp_sinistro_colisao_transversal == "S") + (tp_sinistro_colisao_outros == "S")
+        #               + (tp_sinistro_choque == "S") + (tp_sinistro_capotamento == "S") + (tp_sinistro_engavetamento == "S" + (tp_sinistro_tombamento == "S")
+        #               + (tp_sinistro_outros == "S") + (tp_sinistro_nao_disponivel == "S")),
+        #           label = "A soma dos `tp_sinsitro_*` deve ser maior que zero (pelo menos um tipo de sinistro deve estar marcado como 'S').",
+        #           segments = tipo_registro ~ c("SINISTRO FATAL", "SINISTRO NAO FATAL", "NOTIFICACAO")
+        #       ) |>
+
         col_vals_equal(
-            columns = starts_with("tp_sinistro_a"),
+            columns = vars(tp_sinistro_atropelamento),
             value = "S",
             na_pass = TRUE
         ) |>
+        col_vals_not_null(
+            columns = vars(tp_sinistro_atropelamento),
+            preconditions = ~ . %>%
+                filter(tp_sinistro_primario == "ATROPELAMENTO"),
+            label = "`tp_sinistro_atropelamento` não deve ter vazios quando `tp_sinistro_primario` é 'ATROPELAMENTO'",
+            segments = tipo_registro ~ c(
+                "SINISTRO FATAL",
+                "SINISTRO NAO FATAL",
+                "NOTIFICACAO"
+            )
+        ) |>
+
         col_vals_equal(
-            columns = starts_with("tp_sinistro_c"),
+            columns = starts_with("tp_sinistro_colisao"),
             value = "S",
             na_pass = TRUE
         ) |>
+        #       col_vals_gt(
+        #           columns = vars(total_colisao),
+        #           value = 0,
+        #           preconditions = ~ . %>% filter(tp_sinistro_primario == "CHOQUE") %>%
+        #           mutate(total_colisao = (tp_sinistro_colisao_frontal == "S") + (tp_sinistro_colisao_traseira == "S") + (tp_sinistro_colisao_lateral == "S") + (tp_sinistro_colisao_transversal == "S") + (tp_sinistro_colisao_outros == "S") ),
+        #           label = "A soma dos `tp_colisao_*` deve ser maior que zero (pelo menos um tipo de colisão deve estar marcado como 'S').",
+        #           segments = tipo_registro ~ c("SINISTRO FATAL", "SINISTRO NAO FATAL", "NOTIFICACAO")
+        #       ) |>
+
+        col_vals_equal(
+            columns = vars(tp_sinistro_choque),
+            value = "S",
+            na_pass = TRUE
+        ) |>
+        col_vals_not_null(
+            columns = vars(tp_sinistro_choque),
+            preconditions = ~ . %>% filter(tp_sinistro_primario == "CHOQUE"),
+            label = "`tp_sinistro_choque` não deve ter vazios quando `tp_sinistro_primario` é 'CHOQUE'",
+            segments = tipo_registro ~ c(
+                "SINISTRO FATAL",
+                "SINISTRO NAO FATAL",
+                "NOTIFICACAO"
+            )
+        ) |>
+
         col_vals_equal(
             columns = starts_with("tp_sinistro_e"),
             value = "S",
@@ -1070,9 +1279,10 @@ create_sinistros_agent <- function(
             value = "S",
             na_pass = TRUE
         ) |>
+
         interrogate() |>
         get_agent_report(
-            title = "Dados abertos Infosiga.SP - Validação da tabela 'sinistros'"
+            title = "Dados abertos Infosiga - Validação da tabela 'sinistros'"
         ) |>
         export_report(
             filename = affix_datetime(path, utc_time = FALSE)

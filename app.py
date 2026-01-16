@@ -110,6 +110,15 @@ body {
     padding: 2rem;
 }
 
+/* Largura fixa para coluna VALORES do pointblank */
+.tab-content td[style*="values"],
+.tab-content td:nth-child(5) {
+    max-width: 250px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 .alert-info {
     background: transparent;
     border: 2px solid #dee2e6;
@@ -125,6 +134,28 @@ body {
     border-radius: 10px;
     color: #212529;
     padding: 1.5rem;
+}
+
+.download-section {
+    margin-bottom: 1.5rem;
+}
+
+.btn-download {
+    background: transparent;
+    border: 2px solid #212529;
+    border-radius: 10px;
+    color: #212529;
+    font-weight: 600;
+    padding: 0.75rem 1.5rem;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-download:hover {
+    background: #212529;
+    color: #ffffff;
 }
 
 .spinner-container {
@@ -180,6 +211,7 @@ app_ui = ui.page_bootstrap(
                 placeholder="Nenhum arquivo selecionado"
             )
         ),
+        ui.output_ui("download_section"),
         ui.output_ui("reports_tabs")
     ),
     title="Validação Infosiga-SP"
@@ -258,7 +290,64 @@ def server(input, output, session):
             import traceback
             error_detail = f"{str(e)}\n\nTraceback:\n{traceback.format_exc()}"
             return {"error": error_detail}
-    
+
+    @output
+    @render.ui
+    def download_section():
+        reports = validation_reports()
+        if reports is None or "error" in reports:
+            return None
+
+        return ui.div(
+            {"class": "download-section"},
+            ui.download_button(
+                "download_reports",
+                ui.tags.span(
+                    ui.tags.i({"class": "fas fa-download me-2"}),
+                    "Baixar Relatórios (ZIP)"
+                ),
+                class_="btn-download"
+            )
+        )
+
+    @render.download(filename="relatorios_validacao.zip")
+    def download_reports():
+        reports = validation_reports()
+        if reports is None or "error" in reports:
+            return
+
+        # CSS para limitar largura da coluna VALORES
+        report_css = """
+        <style>
+        td:nth-child(5) {
+            max-width: 250px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        </style>
+        """
+
+        def inject_css(html):
+            if "</head>" in html:
+                return html.replace("</head>", report_css + "</head>")
+            elif "<body" in html:
+                return html.replace("<body", report_css + "<body")
+            return report_css + html
+
+        temp_zip = tempfile.NamedTemporaryFile(delete=False, suffix=".zip")
+        temp_zip.close()
+
+        with zipfile.ZipFile(temp_zip.name, "w", zipfile.ZIP_DEFLATED) as zf:
+            zf.writestr("relatorio_sinistros.html", inject_css(reports["sinistros"]))
+            zf.writestr("relatorio_veiculos.html", inject_css(reports["veiculos"]))
+            zf.writestr("relatorio_pessoas.html", inject_css(reports["pessoas"]))
+
+        with open(temp_zip.name, "rb") as f:
+            yield f.read()
+
+        os.unlink(temp_zip.name)
+
     @output
     @render.ui
     def reports_tabs():

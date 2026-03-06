@@ -18,12 +18,15 @@ def create_pessoas_agent(
     schema: pb.Schema,
     lista_municipios: List[str],
 ) -> str:
+    import sys
     from datetime import datetime
     from dateutil.relativedelta import relativedelta
-    
+
+    print(f"[PESSOAS] Iniciando validação de {len(df_pessoas)} registros", file=sys.stderr)
     data_max = (datetime.combine(data_release, datetime.min.time()) + relativedelta(months=1) - timedelta(days=1)).date()
     data_min = date(2014, 12, 21)
-    
+
+    print(f"[PESSOAS] Criando agente de validação", file=sys.stderr)
     agent = (
         pb.Validate(
             data=df_pessoas,
@@ -199,10 +202,15 @@ def create_pessoas_agent(
             brief="`tempo_sinistro_obito` não deve ter vazios quando `gravidade_lesao` é 'FATAL'"
         )
     )
-    
+
+    print("[PESSOAS] Executando interrogate()...", file=sys.stderr)
     agent = agent.interrogate()
+    print("[PESSOAS] Gerando relatório tabular...", file=sys.stderr)
     report = agent.get_tabular_report(title="Dados abertos Infosiga - Validação da tabela 'pessoas'")
-    return report._repr_html_()
+    print("[PESSOAS] Convertendo para HTML...", file=sys.stderr)
+    html_result = report._repr_html_()
+    print(f"[PESSOAS] Validação concluída. HTML size: {len(html_result)} chars", file=sys.stderr)
+    return html_result
 
 
 def create_veiculos_agent(
@@ -211,9 +219,11 @@ def create_veiculos_agent(
     data_release: date,
     schema: pb.Schema,
 ) -> str:
+    import sys
     from datetime import datetime
     from dateutil.relativedelta import relativedelta
-    
+
+    print(f"[VEICULOS] Iniciando validação de {len(df_veiculos)} registros", file=sys.stderr)
     data_max = (datetime.combine(data_release, datetime.min.time()) + relativedelta(months=1) - timedelta(days=1)).date()
     
     agent = (
@@ -269,10 +279,15 @@ def create_veiculos_agent(
             brief="Inputs válidos de `tipo_veiculo`"
         )
     )
-    
+
+    print("[VEICULOS] Executando interrogate()...", file=sys.stderr)
     agent = agent.interrogate()
+    print("[VEICULOS] Gerando relatório tabular...", file=sys.stderr)
     report = agent.get_tabular_report(title="Dados abertos Infosiga - Validação da tabela 'veiculos'")
-    return report._repr_html_()
+    print("[VEICULOS] Convertendo para HTML...", file=sys.stderr)
+    html_result = report._repr_html_()
+    print(f"[VEICULOS] Validação concluída. HTML size: {len(html_result)} chars", file=sys.stderr)
+    return html_result
 
 
 def create_sinistros_agent(
@@ -282,9 +297,11 @@ def create_sinistros_agent(
     schema: pb.Schema,
     lista_municipios: List[str],
 ) -> str:
+    import sys
     from datetime import datetime
     from dateutil.relativedelta import relativedelta
-    
+
+    print(f"[SINISTROS] Iniciando validação de {len(df_sinistros)} registros", file=sys.stderr)
     data_max = (datetime.combine(data_release, datetime.min.time()) + relativedelta(months=1) - timedelta(days=1)).date()
     data_min = date(2014, 12, 21)
     
@@ -302,6 +319,10 @@ def create_sinistros_agent(
             brief="Espera-se que `id_sinistro` tenha 7 dígitos."
         )
         .col_vals_not_null(columns="id_sinistro", brief="`id_sinistro` não deve ter vazios")
+        .col_vals_expr(
+            expr=lambda x: ~x["id_sinistro"].duplicated(keep=False),
+            brief="`id_sinistro` deve ser um valor único"
+        )
         .col_vals_in_set(
             columns="tipo_registro",
             set=valid_data["lista_tipo_registro"],
@@ -309,7 +330,7 @@ def create_sinistros_agent(
         )
         .col_vals_between(
             columns="data_sinistro",
-            left=date(2014, 12, 21),
+            left=data_min,
             right=data_max,
             brief="min/max de `data_sinistro`"
         )
@@ -324,6 +345,20 @@ def create_sinistros_agent(
             left=1,
             right=12,
             brief="min/max de `mes_sinistro`"
+        )
+        .col_vals_between(
+            columns="dia_sinistro",
+            left=1,
+            right=data_max.day,
+            brief="min/max de `dia_sinistro`"
+        )
+        .col_vals_expr(
+            expr=lambda x: (x["hora_sinistro"] >= pd.Timedelta(0)) & (x["hora_sinistro"] <= pd.Timedelta(hours=23, minutes=59, seconds=59)),
+            brief="`hora_sinistro` deve estar entre 00:00:00 e 23:59:59"
+        )
+        .col_vals_expr(
+            expr=lambda x: x["ano_mes_sinistro"] == x["ano_sinistro"].astype(str) + "/" + x["mes_sinistro"].astype(str).str.zfill(2),
+            brief="`ano_mes_sinistro` deve ser a concatenação de `ano_sinistro` com '/' e `mes_sinistro`"
         )
         .col_vals_in_set(
             columns="dia_da_semana",
@@ -390,28 +425,112 @@ def create_sinistros_agent(
             brief="Inputs válidos de tp_sinistro_primario."
         )
         .col_vals_not_null(columns="tp_sinistro_primario", brief="`tp_sinistro_primario` não deve ter vazios")
-        .col_vals_gt(
-            columns="qtd_pedestre",
-            value=0,
-            brief="Valores não-nulos.",
-            na_pass=True
-        )
+        .col_vals_gt(columns="qtd_pedestre", value=0, brief="`qtd_pedestre` > 0", na_pass=True)
+        .col_vals_gt(columns="qtd_bicicleta", value=0, brief="`qtd_bicicleta` > 0", na_pass=True)
+        .col_vals_gt(columns="qtd_motocicleta", value=0, brief="`qtd_motocicleta` > 0", na_pass=True)
+        .col_vals_gt(columns="qtd_automovel", value=0, brief="`qtd_automovel` > 0", na_pass=True)
+        .col_vals_gt(columns="qtd_onibus", value=0, brief="`qtd_onibus` > 0", na_pass=True)
+        .col_vals_gt(columns="qtd_caminhao", value=0, brief="`qtd_caminhao` > 0", na_pass=True)
+        .col_vals_gt(columns="qtd_veic_outros", value=0, brief="`qtd_veic_outros` > 0", na_pass=True)
+        .col_vals_gt(columns="qtd_veic_nao_disponivel", value=0, brief="`qtd_veic_nao_disponivel` > 0", na_pass=True)
+        .col_vals_gt(columns="qtd_gravidade_fatal", value=0, brief="`qtd_gravidade_fatal` > 0", na_pass=True)
+        .col_vals_gt(columns="qtd_gravidade_grave", value=0, brief="`qtd_gravidade_grave` > 0", na_pass=True)
+        .col_vals_gt(columns="qtd_gravidade_leve", value=0, brief="`qtd_gravidade_leve` > 0", na_pass=True)
         .col_vals_null(columns="qtd_gravidade_ileso", brief="`qtd_gravidade_ileso` é sempre vazio.")
+        .col_vals_gt(columns="qtd_gravidade_nao_disponivel", value=0, brief="`qtd_gravidade_nao_disponivel` > 0", na_pass=True)
     )
     
     # Validações condicionais usando expressões
     agent = (
         agent
+        # Validações de latitude/longitude por tipo_registro
+        .col_vals_expr(
+            expr=lambda x: (x["tipo_registro"] != "SINISTRO FATAL") | (x["latitude"].notna()),
+            brief="`latitude` não deve ter vazios para 'SINISTRO FATAL'"
+        )
+        .col_vals_expr(
+            expr=lambda x: (x["tipo_registro"] != "SINISTRO FATAL") | (x["longitude"].notna()),
+            brief="`longitude` não deve ter vazios para 'SINISTRO FATAL'"
+        )
+        .col_vals_expr(
+            expr=lambda x: (x["tipo_registro"] != "SINISTRO NAO FATAL") | (x["latitude"].notna()),
+            brief="`latitude` não deve ter vazios para 'SINISTRO NAO FATAL'"
+        )
+        .col_vals_expr(
+            expr=lambda x: (x["tipo_registro"] != "SINISTRO NAO FATAL") | (x["longitude"].notna()),
+            brief="`longitude` não deve ter vazios para 'SINISTRO NAO FATAL'"
+        )
+        .col_vals_expr(
+            expr=lambda x: (x["tipo_registro"] != "NOTIFICACAO") | (x["latitude"].notna()),
+            brief="`latitude` não deve ter vazios para 'NOTIFICACAO'"
+        )
+        .col_vals_expr(
+            expr=lambda x: (x["tipo_registro"] != "NOTIFICACAO") | (x["longitude"].notna()),
+            brief="`longitude` não deve ter vazios para 'NOTIFICACAO'"
+        )
+        # Validações condicionais para qtd_pedestre quando atropelamento
+        .col_vals_expr(
+            expr=lambda x: (x["tipo_registro"] == "NOTIFICACAO") | (x["tp_sinistro_primario"] != "ATROPELAMENTO") | (x["qtd_pedestre"].notna()),
+            brief="`qtd_pedestre` não deve ter vazios quando `tp_sinistro_primario` é 'ATROPELAMENTO' (segmentado por tipo_registro)"
+        )
+        # Validações condicionais para qtd_gravidade_fatal
         .col_vals_expr(
             expr=lambda x: (x["tipo_registro"] != "SINISTRO FATAL") | (x["qtd_gravidade_fatal"].notna()),
             brief="`qtd_gravidade_fatal` não deve ter vazios quando `tipo_registro` é 'SINISTRO FATAL'"
         )
+        # Validações condicionais para tp_sinistro_atropelamento
         .col_vals_expr(
-            expr=lambda x: (x["tp_sinistro_primario"] != "ATROPELAMENTO") | (x["qtd_pedestre"].notna()),
-            brief="`qtd_pedestre` não deve ter vazios quando `tp_sinistro_primario` é 'ATROPELAMENTO'"
+            expr=lambda x: (x["tipo_registro"] == "NOTIFICACAO") | (x["tp_sinistro_primario"] != "ATROPELAMENTO") | (x["tp_sinistro_atropelamento"].notna()),
+            brief="`tp_sinistro_atropelamento` não deve ter vazios quando `tp_sinistro_primario` é 'ATROPELAMENTO' (segmentado por tipo_registro)"
+        )
+        # Validações condicionais para tp_sinistro_choque
+        .col_vals_expr(
+            expr=lambda x: (x["tipo_registro"] == "NOTIFICACAO") | (x["tp_sinistro_primario"] != "CHOQUE") | (x["tp_sinistro_choque"].notna()),
+            brief="`tp_sinistro_choque` não deve ter vazios quando `tp_sinistro_primario` é 'CHOQUE' (segmentado por tipo_registro)"
+        )
+        # Ao menos uma colisão marcada quando tp_sinistro_primario é COLISAO
+        .col_vals_expr(
+            expr=lambda x: (x["tp_sinistro_primario"] != "COLISAO") | (
+                (x["tp_sinistro_colisao_frontal"] == "S") |
+                (x["tp_sinistro_colisao_traseira"] == "S") |
+                (x["tp_sinistro_colisao_lateral"] == "S") |
+                (x["tp_sinistro_colisao_transversal"] == "S") |
+                (x["tp_sinistro_colisao_outros"] == "S")
+            ),
+            brief="Ao menos uma variável de colisão deve ter valor 'S' quando `tp_sinistro_primario` é 'COLISAO'"
+        )
+        # Soma de veículos > 1 quando COLISAO
+        .col_vals_expr(
+            expr=lambda x: (x["tp_sinistro_primario"] != "COLISAO") | (
+                (x["qtd_bicicleta"].fillna(0) + x["qtd_motocicleta"].fillna(0) +
+                 x["qtd_automovel"].fillna(0) + x["qtd_onibus"].fillna(0) +
+                 x["qtd_caminhao"].fillna(0) + x["qtd_veic_outros"].fillna(0) +
+                 x["qtd_veic_nao_disponivel"].fillna(0)) > 1
+            ),
+            brief="Soma de veículos deve ser > 1 quando `tp_sinistro_primario` é 'COLISAO'"
+        )
+        # Ao menos um tipo de OUTROS marcado quando tp_sinistro_primario é OUTROS
+        .col_vals_expr(
+            expr=lambda x: (x["tp_sinistro_primario"] != "OUTROS") | (
+                (x["tp_sinistro_capotamento"] == "S") |
+                (x["tp_sinistro_engavetamento"] == "S") |
+                (x["tp_sinistro_tombamento"] == "S") |
+                (x["tp_sinistro_outros"] == "S")
+            ),
+            brief="Ao menos uma variável deve ter valor 'S' entre capotamento, engavetamento, tombamento e outros quando `tp_sinistro_primario` é 'OUTROS'"
+        )
+        # tp_sinistro_nao_disponivel não deve ter vazios quando tp_sinistro_primario é NAO DISPONIVEL
+        .col_vals_expr(
+            expr=lambda x: (x["tp_sinistro_primario"] != "NAO DISPONIVEL") | (x["tp_sinistro_nao_disponivel"].notna()),
+            brief="`tp_sinistro_nao_disponivel` não deve ter vazios quando `tp_sinistro_primario` é 'NAO DISPONIVEL'"
         )
     )
-    
+
+    print("[SINISTROS] Executando interrogate()...", file=sys.stderr)
     agent = agent.interrogate()
+    print("[SINISTROS] Gerando relatório tabular...", file=sys.stderr)
     report = agent.get_tabular_report(title="Dados abertos Infosiga - Validação da tabela 'sinistros'")
-    return report._repr_html_()
+    print("[SINISTROS] Convertendo para HTML...", file=sys.stderr)
+    html_result = report._repr_html_()
+    print(f"[SINISTROS] Validação concluída. HTML size: {len(html_result)} chars", file=sys.stderr)
+    return html_result

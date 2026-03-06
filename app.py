@@ -178,6 +178,98 @@ body {
 .text-primary {
     color: #212529 !important;
 }
+
+.btn-process {
+    background: #212529;
+    border: 2px solid #212529;
+    border-radius: 10px;
+    color: #ffffff;
+    font-weight: 600;
+    padding: 0.75rem 2rem;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1rem;
+    margin-top: 1rem;
+}
+
+.btn-process:hover {
+    background: #495057;
+    border-color: #495057;
+    color: #ffffff;
+}
+
+.btn-process:disabled {
+    background: #dee2e6;
+    border-color: #dee2e6;
+    color: #6c757d;
+    cursor: not-allowed;
+}
+
+.status-message {
+    background: transparent;
+    border: 2px solid #212529;
+    border-radius: 10px;
+    padding: 1rem 1.5rem;
+    margin-top: 1rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.status-message.processing {
+    border-color: #0d6efd;
+    color: #0d6efd;
+}
+
+.status-message.success {
+    border-color: #198754;
+    color: #198754;
+}
+
+.status-message.error {
+    border-color: #dc3545;
+    color: #dc3545;
+}
+
+.table-selection {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 2px solid #dee2e6;
+}
+
+.table-selection label {
+    font-weight: 600;
+    color: #212529;
+    margin-bottom: 0.75rem;
+    display: block;
+}
+
+.checkbox-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.checkbox-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.checkbox-item input[type="checkbox"] {
+    width: 1.25rem;
+    height: 1.25rem;
+    cursor: pointer;
+}
+
+.checkbox-item label {
+    margin: 0;
+    font-weight: 500;
+    cursor: pointer;
+}
 """
 
 app_ui = ui.page_bootstrap(
@@ -209,7 +301,10 @@ app_ui = ui.page_bootstrap(
                 multiple=False,
                 button_label="Selecionar Arquivo",
                 placeholder="Nenhum arquivo selecionado"
-            )
+            ),
+            ui.output_ui("table_selection_ui"),
+            ui.output_ui("process_button_ui"),
+            ui.output_ui("status_message")
         ),
         ui.output_ui("download_section"),
         ui.output_ui("reports_tabs")
@@ -218,78 +313,260 @@ app_ui = ui.page_bootstrap(
 )
 
 def server(input, output, session):
-    @reactive.calc
-    def processed_data():
+    # Estado para armazenar dados processados
+    processed_data_store = reactive.value(None)
+    validation_reports_store = reactive.value(None)
+    processing_status = reactive.value("")
+
+    @reactive.effect
+    @reactive.event(input.zipfile)
+    def reset_on_file_change():
+        """Reset status when a new file is uploaded"""
+        processing_status.set("")
+        validation_reports_store.set(None)
+        processed_data_store.set(None)
+
+    @output
+    @render.ui
+    def table_selection_ui():
         zip_info = input.zipfile()
         if zip_info is None or len(zip_info) == 0:
             return None
-        
-        zip_path = zip_info[0]["datapath"]
-        
-        try:
-            df_pessoas = read_infosiga(zip_path, "pessoas")
-            df_veiculos = read_infosiga(zip_path, "veiculos")
-            df_sinistros = read_infosiga(zip_path, "sinistros")
-            
-            return {
-                "pessoas": df_pessoas,
-                "veiculos": df_veiculos,
-                "sinistros": df_sinistros
-            }
-        except Exception as e:
-            import traceback
-            error_detail = f"{str(e)}\n\nTraceback:\n{traceback.format_exc()}"
-            return {"error": error_detail}
-    
-    @reactive.calc
-    def validation_reports():
-        data = processed_data()
-        if data is None:
+
+        return ui.div(
+            {"class": "table-selection"},
+            ui.tags.label("Selecione as tabelas para validar:"),
+            ui.div(
+                {"class": "checkbox-group"},
+                ui.div(
+                    {"class": "checkbox-item"},
+                    ui.input_checkbox("validate_sinistros", "", value=True),
+                    ui.tags.label(
+                        ui.tags.i({"class": "fas fa-car-crash me-2"}),
+                        "Sinistros",
+                        {"for": "validate_sinistros"}
+                    )
+                ),
+                ui.div(
+                    {"class": "checkbox-item"},
+                    ui.input_checkbox("validate_veiculos", "", value=True),
+                    ui.tags.label(
+                        ui.tags.i({"class": "fas fa-car me-2"}),
+                        "Veículos",
+                        {"for": "validate_veiculos"}
+                    )
+                ),
+                ui.div(
+                    {"class": "checkbox-item"},
+                    ui.input_checkbox("validate_pessoas", "", value=True),
+                    ui.tags.label(
+                        ui.tags.i({"class": "fas fa-users me-2"}),
+                        "Pessoas",
+                        {"for": "validate_pessoas"}
+                    )
+                )
+            )
+        )
+
+    @output
+    @render.ui
+    def process_button_ui():
+        zip_info = input.zipfile()
+        if zip_info is None or len(zip_info) == 0:
             return None
-        if "error" in data:
-            return {"error": data["error"]}
-        
+
+        status = processing_status()
+        is_processing = status.startswith("processing")
+
+        if is_processing:
+            return ui.tags.button(
+                ui.tags.span(
+                    ui.div(
+                        {"class": "spinner-border spinner-border-sm me-2", "role": "status"},
+                        ui.tags.span({"class": "visually-hidden"}, "Processando...")
+                    ),
+                    "Processando..."
+                ),
+                class_="btn-process",
+                disabled=True
+            )
+
+        return ui.input_action_button(
+            "process_btn",
+            ui.tags.span(
+                ui.tags.i({"class": "fas fa-play me-2"}),
+                "Iniciar Validação"
+            ),
+            class_="btn-process"
+        )
+
+    @output
+    @render.ui
+    def status_message():
+        status = processing_status()
+        if not status:
+            return None
+
+        if status.startswith("processing"):
+            parts = status.split(":", 1)
+            message = parts[1] if len(parts) > 1 else "Processando dados e gerando relatórios de validação..."
+            return ui.div(
+                {"class": "status-message processing"},
+                ui.div(
+                    {"class": "spinner-border spinner-border-sm", "role": "status"},
+                    ui.tags.span({"class": "visually-hidden"}, "Processando...")
+                ),
+                ui.tags.span(message)
+            )
+        elif status == "success":
+            return ui.div(
+                {"class": "status-message success"},
+                ui.tags.i({"class": "fas fa-check-circle"}),
+                ui.tags.span("Validação concluída com sucesso!")
+            )
+        elif status.startswith("error:"):
+            error_msg = status.replace("error:", "")
+            return ui.div(
+                {"class": "status-message error"},
+                ui.tags.i({"class": "fas fa-exclamation-circle"}),
+                ui.tags.span(f"Erro: {error_msg}")
+            )
+        return None
+
+    @reactive.effect
+    @reactive.event(input.process_btn)
+    def process_data():
+        import traceback
+        import sys
+
+        zip_info = input.zipfile()
+        if zip_info is None or len(zip_info) == 0:
+            print("ERRO: Nenhum arquivo ZIP foi carregado", file=sys.stderr)
+            return
+
         try:
+            processing_status.set("processing:Iniciando processamento...")
+            print("Iniciando processamento...", file=sys.stderr)
+            zip_path = zip_info[0]["datapath"]
+            print(f"Arquivo ZIP: {zip_path}", file=sys.stderr)
+
+            # Verificar quais tabelas processar
+            process_pessoas = input.validate_pessoas()
+            process_veiculos = input.validate_veiculos()
+            process_sinistros = input.validate_sinistros()
+
+            print(f"Tabelas selecionadas - Pessoas: {process_pessoas}, Veículos: {process_veiculos}, Sinistros: {process_sinistros}", file=sys.stderr)
+
+            # Leitura dos dados (apenas tabelas selecionadas)
+            data = {}
+
+            if process_pessoas:
+                processing_status.set("processing:Lendo dados de pessoas...")
+                print("Lendo dados de pessoas...", file=sys.stderr)
+                df_pessoas = read_infosiga(zip_path, "pessoas")
+                print(f"Pessoas: {len(df_pessoas)} registros", file=sys.stderr)
+                data["pessoas"] = df_pessoas
+
+            if process_veiculos:
+                processing_status.set("processing:Lendo dados de veículos...")
+                print("Lendo dados de veículos...", file=sys.stderr)
+                df_veiculos = read_infosiga(zip_path, "veiculos")
+                print(f"Veículos: {len(df_veiculos)} registros", file=sys.stderr)
+                data["veiculos"] = df_veiculos
+
+            if process_sinistros:
+                processing_status.set("processing:Lendo dados de sinistros...")
+                print("Lendo dados de sinistros...", file=sys.stderr)
+                df_sinistros = read_infosiga(zip_path, "sinistros")
+                print(f"Sinistros: {len(df_sinistros)} registros", file=sys.stderr)
+                data["sinistros"] = df_sinistros
+
+            processed_data_store.set(data)
+
+            # Geração dos relatórios de validação
+            processing_status.set("processing:Carregando configurações de validação...")
+            print("Carregando configurações de validação...", file=sys.stderr)
             valid_data = create_valid_data()
             lista_municipios = load_municipios()
             data_release = date(2026, 1, 14)
-            
-            schema_pessoas = create_schema_pessoas()
-            schema_veiculos = create_schema_veiculos()
-            schema_sinistros = create_schema_sinistros()
-            
-            html_pessoas = create_pessoas_agent(
-                data["pessoas"],
-                valid_data,
-                data_release,
-                schema_pessoas,
-                lista_municipios
-            )
-            
-            html_veiculos = create_veiculos_agent(
-                data["veiculos"],
-                valid_data,
-                data_release,
-                schema_veiculos
-            )
-            
-            html_sinistros = create_sinistros_agent(
-                data["sinistros"],
-                valid_data,
-                data_release,
-                schema_sinistros,
-                lista_municipios
-            )
-            
-            return {
-                "pessoas": html_pessoas,
-                "veiculos": html_veiculos,
-                "sinistros": html_sinistros
-            }
+
+            reports = {}
+
+            if process_pessoas:
+                schema_pessoas = create_schema_pessoas()
+                processing_status.set("processing:Validando dados de pessoas...")
+                print("Gerando relatório de pessoas...", file=sys.stderr)
+                try:
+                    html_pessoas = create_pessoas_agent(
+                        data["pessoas"],
+                        valid_data,
+                        data_release,
+                        schema_pessoas,
+                        lista_municipios
+                    )
+                    print("Relatório de pessoas concluído", file=sys.stderr)
+                    reports["pessoas"] = html_pessoas
+                except Exception as e:
+                    print(f"ERRO no relatório de pessoas: {str(e)}", file=sys.stderr)
+                    print(traceback.format_exc(), file=sys.stderr)
+                    raise
+
+            if process_veiculos:
+                schema_veiculos = create_schema_veiculos()
+                processing_status.set("processing:Validando dados de veículos...")
+                print("Gerando relatório de veículos...", file=sys.stderr)
+                try:
+                    html_veiculos = create_veiculos_agent(
+                        data["veiculos"],
+                        valid_data,
+                        data_release,
+                        schema_veiculos
+                    )
+                    print("Relatório de veículos concluído", file=sys.stderr)
+                    reports["veiculos"] = html_veiculos
+                except Exception as e:
+                    print(f"ERRO no relatório de veículos: {str(e)}", file=sys.stderr)
+                    print(traceback.format_exc(), file=sys.stderr)
+                    raise
+
+            if process_sinistros:
+                schema_sinistros = create_schema_sinistros()
+                processing_status.set("processing:Validando dados de sinistros...")
+                print("Gerando relatório de sinistros...", file=sys.stderr)
+                try:
+                    html_sinistros = create_sinistros_agent(
+                        data["sinistros"],
+                        valid_data,
+                        data_release,
+                        schema_sinistros,
+                        lista_municipios
+                    )
+                    print("Relatório de sinistros concluído", file=sys.stderr)
+                    reports["sinistros"] = html_sinistros
+                except Exception as e:
+                    print(f"ERRO no relatório de sinistros: {str(e)}", file=sys.stderr)
+                    print(traceback.format_exc(), file=sys.stderr)
+                    raise
+            validation_reports_store.set(reports)
+            processing_status.set("success")
+            print("Processamento concluído com sucesso!", file=sys.stderr)
+
         except Exception as e:
-            import traceback
-            error_detail = f"{str(e)}\n\nTraceback:\n{traceback.format_exc()}"
-            return {"error": error_detail}
+            error_msg = str(e)
+            error_trace = traceback.format_exc()
+            print(f"ERRO durante processamento: {error_msg}", file=sys.stderr)
+            print(f"Traceback:\n{error_trace}", file=sys.stderr)
+
+            error_detail = f"{error_msg}\n\nTraceback:\n{error_trace}"
+            validation_reports_store.set({"error": error_detail})
+            processing_status.set(f"error:{error_msg}")
+
+            # Garantir que o erro não cause crash do app
+            return
+
+    @reactive.calc
+    def validation_reports():
+        return validation_reports_store()
 
     @output
     @render.ui
@@ -339,9 +616,12 @@ def server(input, output, session):
         temp_zip.close()
 
         with zipfile.ZipFile(temp_zip.name, "w", zipfile.ZIP_DEFLATED) as zf:
-            zf.writestr("relatorio_sinistros.html", inject_css(reports["sinistros"]))
-            zf.writestr("relatorio_veiculos.html", inject_css(reports["veiculos"]))
-            zf.writestr("relatorio_pessoas.html", inject_css(reports["pessoas"]))
+            if "sinistros" in reports:
+                zf.writestr("relatorio_sinistros.html", inject_css(reports["sinistros"]))
+            if "veiculos" in reports:
+                zf.writestr("relatorio_veiculos.html", inject_css(reports["veiculos"]))
+            if "pessoas" in reports:
+                zf.writestr("relatorio_pessoas.html", inject_css(reports["pessoas"]))
 
         with open(temp_zip.name, "rb") as f:
             yield f.read()
@@ -352,14 +632,14 @@ def server(input, output, session):
     @render.ui
     def reports_tabs():
         reports = validation_reports()
-        
+
         if reports is None:
             return ui.div(
                 {"class": "alert alert-info"},
                 ui.tags.i({"class": "fas fa-info-circle me-2"}),
                 "Aguardando upload do arquivo ZIP com os dados do Infosiga..."
             )
-        
+
         if "error" in reports:
             return ui.div(
                 {"class": "alert alert-danger"},
@@ -372,33 +652,53 @@ def server(input, output, session):
                     style="white-space: pre-wrap; word-wrap: break-word;"
                 )
             )
-        
-        return ui.navset_tab(
-            ui.nav_panel(
-                ui.tags.span(
-                    ui.tags.i({"class": "fas fa-car-crash"}),
-                    " Sinistros"
-                ),
-                ui.HTML(reports["sinistros"]),
-                value="sinistros"
-            ),
-            ui.nav_panel(
-                ui.tags.span(
-                    ui.tags.i({"class": "fas fa-car"}),
-                    " Veículos"
-                ),
-                ui.HTML(reports["veiculos"]),
-                value="veiculos"
-            ),
-            ui.nav_panel(
-                ui.tags.span(
-                    ui.tags.i({"class": "fas fa-users"}),
-                    " Pessoas"
-                ),
-                ui.HTML(reports["pessoas"]),
-                value="pessoas"
-            ),
-            id="report_tabs"
-        )
+
+        # Criar tabs apenas para as tabelas processadas
+        tabs = []
+
+        if "sinistros" in reports:
+            tabs.append(
+                ui.nav_panel(
+                    ui.tags.span(
+                        ui.tags.i({"class": "fas fa-car-crash"}),
+                        " Sinistros"
+                    ),
+                    ui.HTML(reports["sinistros"]),
+                    value="sinistros"
+                )
+            )
+
+        if "veiculos" in reports:
+            tabs.append(
+                ui.nav_panel(
+                    ui.tags.span(
+                        ui.tags.i({"class": "fas fa-car"}),
+                        " Veículos"
+                    ),
+                    ui.HTML(reports["veiculos"]),
+                    value="veiculos"
+                )
+            )
+
+        if "pessoas" in reports:
+            tabs.append(
+                ui.nav_panel(
+                    ui.tags.span(
+                        ui.tags.i({"class": "fas fa-users"}),
+                        " Pessoas"
+                    ),
+                    ui.HTML(reports["pessoas"]),
+                    value="pessoas"
+                )
+            )
+
+        if not tabs:
+            return ui.div(
+                {"class": "alert alert-info"},
+                ui.tags.i({"class": "fas fa-info-circle me-2"}),
+                "Nenhuma tabela foi selecionada para validação. Selecione ao menos uma tabela e clique em 'Iniciar Validação'."
+            )
+
+        return ui.navset_tab(*tabs, id="report_tabs")
 
 app = App(app_ui, server)

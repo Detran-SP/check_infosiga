@@ -296,6 +296,16 @@ app_ui = ui.page_bootstrap(
                 button_label="Selecionar Arquivo",
                 placeholder="Nenhum arquivo selecionado"
             ),
+            ui.input_date(
+                "data_release",
+                ui.tags.span(
+                    ui.tags.i({"class": "fas fa-calendar-day me-2"}),
+                    "Data de referência (release)"
+                ),
+                value=date.today(),
+                format="dd/mm/yyyy",
+                language="pt-BR"
+            ),
             ui.output_ui("table_selection_ui"),
             ui.output_ui("process_button_ui"),
             ui.output_ui("status_message")
@@ -465,7 +475,7 @@ def server(input, output, session):
             print("Carregando configurações de validação...", file=sys.stderr)
             valid_data = create_valid_data()
             lista_municipios = load_municipios()
-            data_release = date(2026, 1, 14)
+            data_release = input.data_release()
 
             reports = {}
 

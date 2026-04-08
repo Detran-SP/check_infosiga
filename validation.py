@@ -18,6 +18,7 @@ def create_pessoas_agent(
     print(f"[PESSOAS] Iniciando validação de {len(df_pessoas)} registros", file=sys.stderr)
     data_max = (datetime.combine(data_release, datetime.min.time()) + relativedelta(months=1) - timedelta(days=1)).date()
     data_min = date(2014, 12, 21)
+    prev_month_last = data_release.replace(day=1) - timedelta(days=1)
 
     _ano_mes_sin_exp = pl.col("ano_sinistro").cast(pl.String) + pl.lit("/") + pl.col("mes_sinistro").cast(pl.String).str.zfill(2)
     _ano_mes_obt_exp = pl.col("ano_obito").cast(pl.String) + pl.lit("/") + pl.col("mes_obito").cast(pl.String).str.zfill(2)
@@ -121,7 +122,7 @@ def create_pessoas_agent(
         .col_vals_between(
             columns="data_sinistro",
             left=data_min,
-            right=data_max,
+            right=prev_month_last,
             brief="min/max de `data_sinistro`"
         )
         .col_vals_between(
@@ -239,7 +240,7 @@ def create_veiculos_agent(
 
     print(f"[VEICULOS] Iniciando validação de {len(df_veiculos)} registros", file=sys.stderr)
     data_max = (datetime.combine(data_release, datetime.min.time()) + relativedelta(months=1) - timedelta(days=1)).date()
-    max_dia_sinistro = (data_release.replace(day=1) - timedelta(days=1)).day
+    prev_month_last = data_release.replace(day=1) - timedelta(days=1)
 
     _ano_mes_sin_exp = pl.col("ano_sinistro").cast(pl.String) + pl.lit("/") + pl.col("mes_sinistro").cast(pl.String).str.zfill(2)
 
@@ -279,7 +280,7 @@ def create_veiculos_agent(
         .col_vals_between(
             columns="data_sinistro",
             left=date(2014, 12, 21),
-            right=data_max,
+            right=prev_month_last,
             brief="min/max de `data_sinistro`"
         )
         .col_vals_between(
@@ -297,7 +298,7 @@ def create_veiculos_agent(
         .col_vals_between(
             columns="dia_sinistro",
             left=1,
-            right=max_dia_sinistro,
+            right=prev_month_last.day,
             brief="min/max de `dia_sinistro`"
         )
         .col_vals_expr(
@@ -332,7 +333,7 @@ def create_sinistros_agent(
     print(f"[SINISTROS] Iniciando validação de {len(df_sinistros)} registros", file=sys.stderr)
     data_max = (datetime.combine(data_release, datetime.min.time()) + relativedelta(months=1) - timedelta(days=1)).date()
     data_min = date(2014, 12, 21)
-    max_dia_sinistro = (data_release.replace(day=1) - timedelta(days=1)).day
+    prev_month_last = data_release.replace(day=1) - timedelta(days=1)
 
     _ano_mes_sin_exp = pl.col("ano_sinistro").cast(pl.String) + pl.lit("/") + pl.col("mes_sinistro").cast(pl.String).str.zfill(2)
 
@@ -362,7 +363,7 @@ def create_sinistros_agent(
         .col_vals_between(
             columns="data_sinistro",
             left=data_min,
-            right=data_max,
+            right=prev_month_last,
             brief="min/max de `data_sinistro`"
         )
         .col_vals_between(
@@ -380,7 +381,7 @@ def create_sinistros_agent(
         .col_vals_between(
             columns="dia_sinistro",
             left=1,
-            right=max_dia_sinistro,
+            right=prev_month_last.day,
             brief="min/max de `dia_sinistro`"
         )
         .col_vals_expr(

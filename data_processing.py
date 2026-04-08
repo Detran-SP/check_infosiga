@@ -1,174 +1,91 @@
 import zipfile
 import tempfile
 import os
-import pandas as pd
-from pathlib import Path
+import polars as pl
 from typing import Literal
 
 
-def read_infosiga(path: str, file: Literal["pessoas", "veiculos", "sinistros"]) -> pd.DataFrame:
+def read_infosiga(path: str, file: Literal["pessoas", "veiculos", "sinistros"]) -> pl.DataFrame:
     temp_dir = tempfile.mkdtemp()
     try:
         with zipfile.ZipFile(path, "r") as zip_ref:
             zip_ref.extractall(temp_dir)
-        
-        pattern = file
-        path_file = None
-        for f in os.listdir(temp_dir):
-            if pattern in f.lower():
-                path_file = os.path.join(temp_dir, f)
-                break
-        
-        if path_file is None:
+
+        path_files = sorted(
+            os.path.join(temp_dir, f)
+            for f in os.listdir(temp_dir)
+            if file in f.lower()
+        )
+
+        if not path_files:
             raise FileNotFoundError(f"Arquivo '{file}' não encontrado no ZIP")
-        
+
         if file == "sinistros":
-            dtype_dict = {
-                "id_sinistro": "Int64",
-                "tipo_registro": "string",
-                "ano_sinistro": "Int64",
-                "mes_sinistro": "Int64",
-                "dia_sinistro": "Int64",
-                "ano_mes_sinistro": "string",
-                "dia_da_semana": "string",
-                "turno": "string",
-                "logradouro": "string",
-                "numero_logradouro": "Float64",
-                "tipo_via": "string",
-                "tipo_local": "string",
-                "latitude": "Float64",
-                "longitude": "Float64",
-                "cod_ibge": "Int64",
-                "municipio": "string",
-                "regiao_administrativa": "string",
-                "administracao": "string",
-                "conservacao": "string",
-                "circunscricao": "string",
-                "tp_sinistro_primario": "string",
-                "qtd_pedestre": "Int64",
-                "qtd_bicicleta": "Int64",
-                "qtd_motocicleta": "Int64",
-                "qtd_automovel": "Int64",
-                "qtd_onibus": "Int64",
-                "qtd_caminhao": "Int64",
-                "qtd_veic_outros": "Int64",
-                "qtd_veic_nao_disponivel": "Int64",
-                "qtd_gravidade_fatal": "Int64",
-                "qtd_gravidade_grave": "Int64",
-                "qtd_gravidade_leve": "Int64",
-                "qtd_gravidade_ileso": "Int64",
-                "qtd_gravidade_nao_disponivel": "Int64",
-                "tp_sinistro_atropelamento": "string",
-                "tp_sinistro_colisao_frontal": "string",
-                "tp_sinistro_colisao_traseira": "string",
-                "tp_sinistro_colisao_lateral": "string",
-                "tp_sinistro_colisao_transversal": "string",
-                "tp_sinistro_colisao_outros": "string",
-                "tp_sinistro_choque": "string",
-                "tp_sinistro_capotamento": "string",
-                "tp_sinistro_engavetamento": "string",
-                "tp_sinistro_tombamento": "string",
-                "tp_sinistro_outros": "string",
-                "tp_sinistro_nao_disponivel": "string",
-            }
+            int_columns = [
+                "id_sinistro", "ano_sinistro", "mes_sinistro", "dia_sinistro",
+                "cod_ibge", "qtd_pedestre", "qtd_bicicleta", "qtd_motocicleta",
+                "qtd_automovel", "qtd_onibus", "qtd_caminhao", "qtd_veic_outros",
+                "qtd_veic_nao_disponivel", "qtd_gravidade_fatal", "qtd_gravidade_grave",
+                "qtd_gravidade_leve", "qtd_gravidade_ileso", "qtd_gravidade_nao_disponivel",
+            ]
+            float_columns = ["numero_logradouro", "latitude", "longitude"]
             date_columns = ["data_sinistro"]
             time_columns = ["hora_sinistro"]
+
         elif file == "pessoas":
-            dtype_dict = {
-                "id_sinistro": "Int64",
-                "id_veiculo": "Int64",
-                "cod_ibge": "Int64",
-                "municipio": "string",
-                "regiao_administrativa": "string",
-                "tipo_via": "string",
-                "tipo_veiculo_vitima": "string",
-                "sexo": "string",
-                "idade": "Int64",
-                "gravidade_lesao": "string",
-                "tipo_de_vitima": "string",
-                "faixa_etaria_demografica": "string",
-                "faixa_etaria_legal": "string",
-                "profissao": "string",
-                "grau_de_instrucao": "string",
-                "nacionalidade": "string",
-                "ano_sinistro": "Int64",
-                "mes_sinistro": "Int64",
-                "dia_sinistro": "Int64",
-                "ano_mes_sinistro": "string",
-                "ano_obito": "Int64",
-                "mes_obito": "Int64",
-                "dia_obito": "Int64",
-                "ano_mes_obito": "string",
-                "local_obito": "string",
-                "local_via": "string",
-                "tempo_sinistro_obito": "Int64",
-            }
+            int_columns = [
+                "id_sinistro", "id_veiculo", "cod_ibge", "idade",
+                "ano_sinistro", "mes_sinistro", "dia_sinistro",
+                "ano_obito", "mes_obito", "dia_obito", "tempo_sinistro_obito",
+            ]
+            float_columns = []
             date_columns = ["data_sinistro", "data_obito"]
             time_columns = []
-        else:
-            dtype_dict = {
-                "id_sinistro": "Int64",
-                "id_veiculo": "Int64",
-                "marca_modelo": "string",
-                "ano_fab": "Int64",
-                "ano_modelo": "Int64",
-                "cor_veiculo": "string",
-                "tipo_veiculo": "string",
-                "ano_sinistro": "Int64",
-                "mes_sinistro": "Int64",
-                "dia_sinistro": "Int64",
-                "ano_mes_sinistro": "string",
-            }
+
+        else:  # veiculos
+            int_columns = [
+                "id_sinistro", "id_veiculo", "ano_fab", "ano_modelo",
+                "ano_sinistro", "mes_sinistro", "dia_sinistro",
+            ]
+            float_columns = []
             date_columns = ["data_sinistro"]
             time_columns = []
-        
-        # Read all columns as string initially
-        df = pd.read_csv(
-            path_file,
-            sep=";",
-            encoding="latin1",
-            dtype="string",
-            parse_dates=False,
-            keep_default_na=False
-        )
-        
-        # Separate columns by type
-        float_columns = [col for col, dtype in dtype_dict.items() if dtype == "Float64"]
-        int_columns = [col for col, dtype in dtype_dict.items() if dtype == "Int64"]
-        string_columns = [col for col, dtype in dtype_dict.items() if dtype == "string"]
-        
-        # Convert float columns (handle comma as decimal separator)
-        for col in float_columns:
-            if col in df.columns:
-                df[col] = pd.to_numeric(
-                    df[col].astype(str).str.replace(",", ".", regex=False),
-                    errors="coerce"
-                ).astype("Float64")
-        
-        # Convert int columns (handle comma as decimal separator)
-        for col in int_columns:
-            if col in df.columns:
-                df[col] = pd.to_numeric(
-                    df[col].astype(str).str.replace(",", ".", regex=False),
-                    errors="coerce"
-                ).astype("Int64")
-        
-        # Keep string columns as string
-        for col in string_columns:
-            if col in df.columns:
-                df[col] = df[col].astype("string")
-        
-        # Convert date columns
-        for col in date_columns:
-            if col in df.columns:
-                df[col] = pd.to_datetime(df[col], format="%d/%m/%Y", errors="coerce")
-        
-        # Convert time columns
-        for col in time_columns:
-            if col in df.columns:
-                df[col] = pd.to_timedelta(df[col].astype(str), errors="coerce")
-        
+
+        parts = [
+            pl.read_csv(p, separator=";", encoding="latin1", infer_schema=False, null_values=[""])
+            for p in path_files
+        ]
+        df = pl.concat(parts) if len(parts) > 1 else parts[0]
+
+        # Converte inteiros (vírgula como separador decimal)
+        int_exprs = [
+            pl.col(c).str.replace(",", ".", literal=True).cast(pl.Int64, strict=False).alias(c)
+            for c in int_columns if c in df.columns
+        ]
+        float_exprs = [
+            pl.col(c).str.replace(",", ".", literal=True).cast(pl.Float64, strict=False).alias(c)
+            for c in float_columns if c in df.columns
+        ]
+        if int_exprs or float_exprs:
+            df = df.with_columns(int_exprs + float_exprs)
+
+        # Converte datas
+        date_exprs = [
+            pl.col(c).str.strptime(pl.Date, format="%d/%m/%Y", strict=False).alias(c)
+            for c in date_columns if c in df.columns
+        ]
+        if date_exprs:
+            df = df.with_columns(date_exprs)
+
+        # Converte hora (HH:MM:SS → pl.Time)
+        if time_columns:
+            df = df.with_columns([
+                pl.col(c).str.strptime(pl.Time, format="%T", strict=False).alias(c)
+                for c in time_columns if c in df.columns
+            ])
+
         return df
+
     finally:
         import shutil
         shutil.rmtree(temp_dir, ignore_errors=True)

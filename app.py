@@ -303,7 +303,7 @@ app_ui = ui.page_bootstrap(
         ui.output_ui("download_section"),
         ui.output_ui("reports_tabs")
     ),
-    title="Validação Infosiga-SP"
+    title="Validação Infosiga"
 )
 
 def server(input, output, session):

@@ -247,28 +247,22 @@ body {
     display: block;
 }
 
-.checkbox-group {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-}
-
-.checkbox-item {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.checkbox-item input[type="checkbox"] {
-    width: 1.25rem;
-    height: 1.25rem;
-    cursor: pointer;
-}
-
-.checkbox-item label {
-    margin: 0;
+.table-selection select {
+    width: 100%;
+    border: 2px solid #dee2e6;
+    border-radius: 10px;
+    padding: 0.5rem;
+    font-family: 'Open Sans', sans-serif;
+    font-size: 1rem;
     font-weight: 500;
+    color: #212529;
+    background: transparent;
     cursor: pointer;
+    outline: none;
+}
+
+.table-selection select:focus {
+    border-color: #212529;
 }
 """
 
@@ -335,36 +329,18 @@ def server(input, output, session):
 
         return ui.div(
             {"class": "table-selection"},
-            ui.tags.label("Selecione as tabelas para validar:"),
-            ui.div(
-                {"class": "checkbox-group"},
-                ui.div(
-                    {"class": "checkbox-item"},
-                    ui.input_checkbox("validate_sinistros", "", value=True),
-                    ui.tags.label(
-                        ui.tags.i({"class": "fas fa-car-crash me-2"}),
-                        "Sinistros",
-                        {"for": "validate_sinistros"}
-                    )
-                ),
-                ui.div(
-                    {"class": "checkbox-item"},
-                    ui.input_checkbox("validate_veiculos", "", value=True),
-                    ui.tags.label(
-                        ui.tags.i({"class": "fas fa-car me-2"}),
-                        "Veículos",
-                        {"for": "validate_veiculos"}
-                    )
-                ),
-                ui.div(
-                    {"class": "checkbox-item"},
-                    ui.input_checkbox("validate_pessoas", "", value=True),
-                    ui.tags.label(
-                        ui.tags.i({"class": "fas fa-users me-2"}),
-                        "Pessoas",
-                        {"for": "validate_pessoas"}
-                    )
-                )
+            ui.input_select(
+                "table_select",
+                "Selecione a tabela para validar:",
+                choices={
+                    "sinistros": "Sinistros",
+                    "veiculos": "Veículos",
+                    "pessoas": "Pessoas"
+                },
+                selected="sinistros",
+                multiple=False,
+                selectize=False,
+                size="3"
             )
         )
 
@@ -450,12 +426,13 @@ def server(input, output, session):
             zip_path = zip_info[0]["datapath"]
             print(f"Arquivo ZIP: {zip_path}", file=sys.stderr)
 
-            # Verificar quais tabelas processar
-            process_pessoas = input.validate_pessoas()
-            process_veiculos = input.validate_veiculos()
-            process_sinistros = input.validate_sinistros()
+            # Verificar qual tabela processar
+            selected_table = input.table_select()
+            process_pessoas = selected_table == "pessoas"
+            process_veiculos = selected_table == "veiculos"
+            process_sinistros = selected_table == "sinistros"
 
-            print(f"Tabelas selecionadas - Pessoas: {process_pessoas}, Veículos: {process_veiculos}, Sinistros: {process_sinistros}", file=sys.stderr)
+            print(f"Tabela selecionada: {selected_table}", file=sys.stderr)
 
             # Leitura dos dados (apenas tabelas selecionadas)
             data = {}

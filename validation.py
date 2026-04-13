@@ -437,6 +437,7 @@ def create_sinistros_agent(
             left=-25.31,
             right=-19.77,
             na_pass=True,
+            segments="tipo_registro",
             brief="Min/max válidos de latitude."
         )
         .col_vals_between(
@@ -444,6 +445,7 @@ def create_sinistros_agent(
             left=-53.11,
             right=-44.16,
             na_pass=True,
+            segments="tipo_registro",
             brief="Min/max válidos de longitude."
         )
         .col_vals_in_set(
@@ -487,29 +489,15 @@ def create_sinistros_agent(
         .col_vals_gt(columns="qtd_gravidade_leve", value=0, brief="`qtd_gravidade_leve` > 0", na_pass=True)
         .col_vals_null(columns="qtd_gravidade_ileso", brief="`qtd_gravidade_ileso` é sempre vazio.")
         .col_vals_gt(columns="qtd_gravidade_nao_disponivel", value=0, brief="`qtd_gravidade_nao_disponivel` > 0", na_pass=True)
-        .col_vals_expr(
-            expr=(pl.col("tipo_registro") != "SINISTRO FATAL") | pl.col("latitude").is_not_null(),
-            brief="`latitude` não deve ter vazios para 'SINISTRO FATAL'"
+        .col_vals_not_null(
+            columns="latitude",
+            segments="tipo_registro",
+            brief="`latitude` não deve ter vazios"
         )
-        .col_vals_expr(
-            expr=(pl.col("tipo_registro") != "SINISTRO FATAL") | pl.col("longitude").is_not_null(),
-            brief="`longitude` não deve ter vazios para 'SINISTRO FATAL'"
-        )
-        .col_vals_expr(
-            expr=(pl.col("tipo_registro") != "SINISTRO NAO FATAL") | pl.col("latitude").is_not_null(),
-            brief="`latitude` não deve ter vazios para 'SINISTRO NAO FATAL'"
-        )
-        .col_vals_expr(
-            expr=(pl.col("tipo_registro") != "SINISTRO NAO FATAL") | pl.col("longitude").is_not_null(),
-            brief="`longitude` não deve ter vazios para 'SINISTRO NAO FATAL'"
-        )
-        .col_vals_expr(
-            expr=(pl.col("tipo_registro") != "NOTIFICACAO") | pl.col("latitude").is_not_null(),
-            brief="`latitude` não deve ter vazios para 'NOTIFICACAO'"
-        )
-        .col_vals_expr(
-            expr=(pl.col("tipo_registro") != "NOTIFICACAO") | pl.col("longitude").is_not_null(),
-            brief="`longitude` não deve ter vazios para 'NOTIFICACAO'"
+        .col_vals_not_null(
+            columns="longitude",
+            segments="tipo_registro",
+            brief="`longitude` não deve ter vazios"
         )
         .col_vals_expr(
             expr=(pl.col("tipo_registro") != "SINISTRO FATAL") | (pl.col("tp_sinistro_primario") != "ATROPELAMENTO") | pl.col("qtd_pedestre").is_not_null(),

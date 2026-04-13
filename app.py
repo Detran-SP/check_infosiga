@@ -2,10 +2,18 @@ from shiny import App, ui, render, reactive
 import tempfile
 import zipfile
 import os
-from datetime import date
+from datetime import date, datetime
 from data_processing import read_infosiga
 from schemas import create_valid_data, create_schema_pessoas, create_schema_veiculos, create_schema_sinistros, load_municipios
 from validation import create_pessoas_agent, create_veiculos_agent, create_sinistros_agent
+
+def _read_version() -> str:
+    import tomllib, pathlib
+    toml_path = pathlib.Path(__file__).parent / "pyproject.toml"
+    with open(toml_path, "rb") as f:
+        return tomllib.load(f)["project"]["version"]
+
+APP_VERSION = _read_version()
 
 # CSS customizado
 custom_css = """
@@ -28,6 +36,12 @@ body {
     font-weight: 700;
     margin-bottom: 0;
     font-size: 2rem;
+}
+
+.main-header small {
+    font-size: 0.85rem;
+    color: #6c757d;
+    font-weight: 400;
 }
 
 .upload-card {
@@ -278,7 +292,8 @@ app_ui = ui.page_bootstrap(
         {"class": "main-header"},
         ui.div(
             {"class": "container"},
-            ui.h1("Validação dos dados abertos do Infosiga")
+            ui.h1("Validação dos dados abertos do Infosiga"),
+            ui.output_ui("version_info")
         )
     ),
     ui.div(
@@ -321,6 +336,15 @@ def server(input, output, session):
     processed_data_store = reactive.value(None)
     validation_reports_store = reactive.value(None)
     processing_status = reactive.value("")
+    validation_timestamp = reactive.value(None)
+
+    @output
+    @render.ui
+    def version_info():
+        ts = validation_timestamp()
+        if ts:
+            return ui.tags.small(f"v{APP_VERSION} · {ts.strftime('%Y-%m-%d')}")
+        return ui.tags.small(f"v{APP_VERSION}")
 
     @reactive.effect
     @reactive.event(input.zipfile)
@@ -535,6 +559,7 @@ def server(input, output, session):
                     print(traceback.format_exc(), file=sys.stderr)
                     raise
             validation_reports_store.set(reports)
+            validation_timestamp.set(datetime.now())
             processing_status.set("success")
             print("Processamento concluído com sucesso!", file=sys.stderr)
 
@@ -574,7 +599,7 @@ def server(input, output, session):
             )
         )
 
-    @render.download(filename="relatorios_validacao.zip")
+    @render.download(filename=lambda: f"relatorios_validacao_{datetime.now().strftime('%Y%m%d_%H%M%S')}.zip")
     def download_reports():
         reports = validation_reports()
         if reports is None or "error" in reports:

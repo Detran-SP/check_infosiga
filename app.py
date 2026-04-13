@@ -341,14 +341,14 @@ def server(input, output, session):
             {"class": "table-selection"},
             ui.input_select(
                 "table_select",
-                "Selecione a tabela para validar:",
+                "Selecione as tabelas para validar:",
                 choices={
                     "sinistros": "Sinistros",
                     "veiculos": "Veículos",
                     "pessoas": "Pessoas"
                 },
-                selected="sinistros",
-                multiple=False,
+                selected=["sinistros", "veiculos", "pessoas"],
+                multiple=True,
                 selectize=False,
                 size="3"
             )
@@ -436,13 +436,13 @@ def server(input, output, session):
             zip_path = zip_info[0]["datapath"]
             print(f"Arquivo ZIP: {zip_path}", file=sys.stderr)
 
-            # Verificar qual tabela processar
-            selected_table = input.table_select()
-            process_pessoas = selected_table == "pessoas"
-            process_veiculos = selected_table == "veiculos"
-            process_sinistros = selected_table == "sinistros"
+            # Verificar quais tabelas processar
+            selected_tables = input.table_select()
+            process_pessoas = "pessoas" in selected_tables
+            process_veiculos = "veiculos" in selected_tables
+            process_sinistros = "sinistros" in selected_tables
 
-            print(f"Tabela selecionada: {selected_table}", file=sys.stderr)
+            print(f"Tabelas selecionadas: {selected_tables}", file=sys.stderr)
 
             # Leitura dos dados (apenas tabelas selecionadas)
             data = {}

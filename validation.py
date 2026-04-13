@@ -162,6 +162,13 @@ def create_pessoas_agent(
             na_pass=True,
             brief="min/max de `mes_obito`"
         )
+        .col_vals_between(
+            columns="dia_obito",
+            left=1,
+            right=31,
+            na_pass=True,
+            brief="min/max de `dia_obito`"
+        )
         .col_vals_expr(
             expr=pl.col("ano_mes_obito").is_null() | (pl.col("ano_mes_obito") == _ano_mes_obt_exp),
             brief="`ano_mes_obito` deve ser a concatenação de `ano_obito` com '/' e `mes_obito`"
@@ -298,7 +305,7 @@ def create_veiculos_agent(
         .col_vals_between(
             columns="dia_sinistro",
             left=1,
-            right=prev_month_last.day,
+            right=31,
             brief="min/max de `dia_sinistro`"
         )
         .col_vals_expr(
@@ -381,7 +388,7 @@ def create_sinistros_agent(
         .col_vals_between(
             columns="dia_sinistro",
             left=1,
-            right=prev_month_last.day,
+            right=31,
             brief="min/max de `dia_sinistro`"
         )
         .col_vals_expr(

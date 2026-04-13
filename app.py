@@ -2,10 +2,18 @@ from shiny import App, ui, render, reactive
 import tempfile
 import zipfile
 import os
-from datetime import date
+from datetime import date, datetime
 from data_processing import read_infosiga
 from schemas import create_valid_data, create_schema_pessoas, create_schema_veiculos, create_schema_sinistros, load_municipios
 from validation import create_pessoas_agent, create_veiculos_agent, create_sinistros_agent
+
+def _read_version() -> str:
+    import tomllib, pathlib
+    toml_path = pathlib.Path(__file__).parent / "pyproject.toml"
+    with open(toml_path, "rb") as f:
+        return tomllib.load(f)["project"]["version"]
+
+APP_VERSION = _read_version()
 
 # CSS customizado
 custom_css = """
@@ -28,6 +36,12 @@ body {
     font-weight: 700;
     margin-bottom: 0;
     font-size: 2rem;
+}
+
+.main-header small {
+    font-size: 0.85rem;
+    color: #6c757d;
+    font-weight: 400;
 }
 
 .upload-card {
@@ -278,7 +292,8 @@ app_ui = ui.page_bootstrap(
         {"class": "main-header"},
         ui.div(
             {"class": "container"},
-            ui.h1("Validação dos dados abertos do Infosiga")
+            ui.h1("Validação dos dados abertos do Infosiga"),
+            ui.output_ui("version_info")
         )
     ),
     ui.div(
@@ -321,6 +336,15 @@ def server(input, output, session):
     processed_data_store = reactive.value(None)
     validation_reports_store = reactive.value(None)
     processing_status = reactive.value("")
+    validation_timestamp = reactive.value(None)
+
+    @output
+    @render.ui
+    def version_info():
+        ts = validation_timestamp()
+        if ts:
+            return ui.tags.small(f"v{APP_VERSION} · {ts.strftime('%Y-%m-%d')}")
+        return ui.tags.small(f"v{APP_VERSION}")
 
     @reactive.effect
     @reactive.event(input.zipfile)
@@ -341,14 +365,14 @@ def server(input, output, session):
             {"class": "table-selection"},
             ui.input_select(
                 "table_select",
-                "Selecione a tabela para validar:",
+                "Selecione as tabelas para validar:",
                 choices={
                     "sinistros": "Sinistros",
                     "veiculos": "Veículos",
                     "pessoas": "Pessoas"
                 },
-                selected="sinistros",
-                multiple=False,
+                selected=["sinistros", "veiculos", "pessoas"],
+                multiple=True,
                 selectize=False,
                 size="3"
             )
@@ -436,13 +460,13 @@ def server(input, output, session):
             zip_path = zip_info[0]["datapath"]
             print(f"Arquivo ZIP: {zip_path}", file=sys.stderr)
 
-            # Verificar qual tabela processar
-            selected_table = input.table_select()
-            process_pessoas = selected_table == "pessoas"
-            process_veiculos = selected_table == "veiculos"
-            process_sinistros = selected_table == "sinistros"
+            # Verificar quais tabelas processar
+            selected_tables = input.table_select()
+            process_pessoas = "pessoas" in selected_tables
+            process_veiculos = "veiculos" in selected_tables
+            process_sinistros = "sinistros" in selected_tables
 
-            print(f"Tabela selecionada: {selected_table}", file=sys.stderr)
+            print(f"Tabelas selecionadas: {selected_tables}", file=sys.stderr)
 
             # Leitura dos dados (apenas tabelas selecionadas)
             data = {}
@@ -535,6 +559,7 @@ def server(input, output, session):
                     print(traceback.format_exc(), file=sys.stderr)
                     raise
             validation_reports_store.set(reports)
+            validation_timestamp.set(datetime.now())
             processing_status.set("success")
             print("Processamento concluído com sucesso!", file=sys.stderr)
 
@@ -574,7 +599,7 @@ def server(input, output, session):
             )
         )
 
-    @render.download(filename="relatorios_validacao.zip")
+    @render.download(filename=lambda: f"relatorios_validacao_{datetime.now().strftime('%Y%m%d_%H%M%S')}.zip")
     def download_reports():
         reports = validation_reports()
         if reports is None or "error" in reports:

@@ -33,6 +33,7 @@ def create_pessoas_agent(
             thresholds=pb.Thresholds(warning=1, error=0.1)
         )
         .col_schema_match(schema=schema, brief="Tipo de dados")
+        .rows_distinct(brief="Não deve haver linhas duplicadas")
         .col_vals_expr(
             expr=pl.col("id_sinistro").fill_null(0).cast(pl.String).str.len_chars() == 7,
             brief="Espera-se que `id_sinistro` tenha 7 dígitos."
@@ -138,6 +139,13 @@ def create_pessoas_agent(
             brief="min/max de `mes_sinistro`"
         )
         .col_vals_expr(
+            expr=pl.col("dia_sinistro").is_between(
+                1,
+                pl.date(pl.col("ano_sinistro"), pl.col("mes_sinistro"), pl.lit(1)).dt.month_end().dt.day()
+            ),
+            brief="min/max de `dia_sinistro`"
+        )
+        .col_vals_expr(
             expr=pl.col("ano_mes_sinistro") == _ano_mes_sin_exp,
             brief="`ano_mes_sinistro` deve ser a concatenação de `ano_sinistro` com '/' e `mes_sinistro`"
         )
@@ -161,6 +169,13 @@ def create_pessoas_agent(
             right=12,
             na_pass=True,
             brief="min/max de `mes_obito`"
+        )
+        .col_vals_expr(
+            expr=pl.col("dia_obito").is_null() | pl.col("dia_obito").is_between(
+                1,
+                pl.date(pl.col("ano_obito"), pl.col("mes_obito"), pl.lit(1)).dt.month_end().dt.day()
+            ),
+            brief="min/max de `dia_obito`"
         )
         .col_vals_expr(
             expr=pl.col("ano_mes_obito").is_null() | (pl.col("ano_mes_obito") == _ano_mes_obt_exp),
@@ -295,10 +310,11 @@ def create_veiculos_agent(
             right=12,
             brief="min/max de `mes_sinistro`"
         )
-        .col_vals_between(
-            columns="dia_sinistro",
-            left=1,
-            right=prev_month_last.day,
+        .col_vals_expr(
+            expr=pl.col("dia_sinistro").is_between(
+                1,
+                pl.date(pl.col("ano_sinistro"), pl.col("mes_sinistro"), pl.lit(1)).dt.month_end().dt.day()
+            ),
             brief="min/max de `dia_sinistro`"
         )
         .col_vals_expr(
@@ -378,10 +394,11 @@ def create_sinistros_agent(
             right=12,
             brief="min/max de `mes_sinistro`"
         )
-        .col_vals_between(
-            columns="dia_sinistro",
-            left=1,
-            right=prev_month_last.day,
+        .col_vals_expr(
+            expr=pl.col("dia_sinistro").is_between(
+                1,
+                pl.date(pl.col("ano_sinistro"), pl.col("mes_sinistro"), pl.lit(1)).dt.month_end().dt.day()
+            ),
             brief="min/max de `dia_sinistro`"
         )
         .col_vals_expr(
@@ -420,6 +437,7 @@ def create_sinistros_agent(
             left=-25.31,
             right=-19.77,
             na_pass=True,
+            segments="tipo_registro",
             brief="Min/max válidos de latitude."
         )
         .col_vals_between(
@@ -427,6 +445,7 @@ def create_sinistros_agent(
             left=-53.11,
             right=-44.16,
             na_pass=True,
+            segments="tipo_registro",
             brief="Min/max válidos de longitude."
         )
         .col_vals_in_set(
@@ -470,29 +489,15 @@ def create_sinistros_agent(
         .col_vals_gt(columns="qtd_gravidade_leve", value=0, brief="`qtd_gravidade_leve` > 0", na_pass=True)
         .col_vals_null(columns="qtd_gravidade_ileso", brief="`qtd_gravidade_ileso` é sempre vazio.")
         .col_vals_gt(columns="qtd_gravidade_nao_disponivel", value=0, brief="`qtd_gravidade_nao_disponivel` > 0", na_pass=True)
-        .col_vals_expr(
-            expr=(pl.col("tipo_registro") != "SINISTRO FATAL") | pl.col("latitude").is_not_null(),
-            brief="`latitude` não deve ter vazios para 'SINISTRO FATAL'"
+        .col_vals_not_null(
+            columns="latitude",
+            segments="tipo_registro",
+            brief="`latitude` não deve ter vazios"
         )
-        .col_vals_expr(
-            expr=(pl.col("tipo_registro") != "SINISTRO FATAL") | pl.col("longitude").is_not_null(),
-            brief="`longitude` não deve ter vazios para 'SINISTRO FATAL'"
-        )
-        .col_vals_expr(
-            expr=(pl.col("tipo_registro") != "SINISTRO NAO FATAL") | pl.col("latitude").is_not_null(),
-            brief="`latitude` não deve ter vazios para 'SINISTRO NAO FATAL'"
-        )
-        .col_vals_expr(
-            expr=(pl.col("tipo_registro") != "SINISTRO NAO FATAL") | pl.col("longitude").is_not_null(),
-            brief="`longitude` não deve ter vazios para 'SINISTRO NAO FATAL'"
-        )
-        .col_vals_expr(
-            expr=(pl.col("tipo_registro") != "NOTIFICACAO") | pl.col("latitude").is_not_null(),
-            brief="`latitude` não deve ter vazios para 'NOTIFICACAO'"
-        )
-        .col_vals_expr(
-            expr=(pl.col("tipo_registro") != "NOTIFICACAO") | pl.col("longitude").is_not_null(),
-            brief="`longitude` não deve ter vazios para 'NOTIFICACAO'"
+        .col_vals_not_null(
+            columns="longitude",
+            segments="tipo_registro",
+            brief="`longitude` não deve ter vazios"
         )
         .col_vals_expr(
             expr=(pl.col("tipo_registro") != "SINISTRO FATAL") | (pl.col("tp_sinistro_primario") != "ATROPELAMENTO") | pl.col("qtd_pedestre").is_not_null(),

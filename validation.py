@@ -33,6 +33,7 @@ def create_pessoas_agent(
             thresholds=pb.Thresholds(warning=1, error=0.1)
         )
         .col_schema_match(schema=schema, brief="Tipo de dados")
+        .rows_distinct(brief="Não deve haver linhas duplicadas")
         .col_vals_expr(
             expr=pl.col("id_sinistro").fill_null(0).cast(pl.String).str.len_chars() == 7,
             brief="Espera-se que `id_sinistro` tenha 7 dígitos."

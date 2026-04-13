@@ -139,6 +139,13 @@ def create_pessoas_agent(
             brief="min/max de `mes_sinistro`"
         )
         .col_vals_expr(
+            expr=pl.col("dia_sinistro").is_between(
+                1,
+                pl.date(pl.col("ano_sinistro"), pl.col("mes_sinistro"), pl.lit(1)).dt.month_end().dt.day()
+            ),
+            brief="min/max de `dia_sinistro`"
+        )
+        .col_vals_expr(
             expr=pl.col("ano_mes_sinistro") == _ano_mes_sin_exp,
             brief="`ano_mes_sinistro` deve ser a concatenação de `ano_sinistro` com '/' e `mes_sinistro`"
         )
@@ -163,11 +170,11 @@ def create_pessoas_agent(
             na_pass=True,
             brief="min/max de `mes_obito`"
         )
-        .col_vals_between(
-            columns="dia_obito",
-            left=1,
-            right=31,
-            na_pass=True,
+        .col_vals_expr(
+            expr=pl.col("dia_obito").is_null() | pl.col("dia_obito").is_between(
+                1,
+                pl.date(pl.col("ano_obito"), pl.col("mes_obito"), pl.lit(1)).dt.month_end().dt.day()
+            ),
             brief="min/max de `dia_obito`"
         )
         .col_vals_expr(
@@ -303,10 +310,11 @@ def create_veiculos_agent(
             right=12,
             brief="min/max de `mes_sinistro`"
         )
-        .col_vals_between(
-            columns="dia_sinistro",
-            left=1,
-            right=31,
+        .col_vals_expr(
+            expr=pl.col("dia_sinistro").is_between(
+                1,
+                pl.date(pl.col("ano_sinistro"), pl.col("mes_sinistro"), pl.lit(1)).dt.month_end().dt.day()
+            ),
             brief="min/max de `dia_sinistro`"
         )
         .col_vals_expr(
@@ -386,10 +394,11 @@ def create_sinistros_agent(
             right=12,
             brief="min/max de `mes_sinistro`"
         )
-        .col_vals_between(
-            columns="dia_sinistro",
-            left=1,
-            right=31,
+        .col_vals_expr(
+            expr=pl.col("dia_sinistro").is_between(
+                1,
+                pl.date(pl.col("ano_sinistro"), pl.col("mes_sinistro"), pl.lit(1)).dt.month_end().dt.day()
+            ),
             brief="min/max de `dia_sinistro`"
         )
         .col_vals_expr(

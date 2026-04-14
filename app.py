@@ -333,7 +333,6 @@ app_ui = ui.page_bootstrap(
 
 def server(input, output, session):
     # Estado para armazenar dados processados
-    processed_data_store = reactive.value(None)
     validation_reports_store = reactive.value(None)
     processing_status = reactive.value("")
     validation_timestamp = reactive.value(None)
@@ -352,7 +351,6 @@ def server(input, output, session):
         """Reset status when a new file is uploaded"""
         processing_status.set("")
         validation_reports_store.set(None)
-        processed_data_store.set(None)
 
     @output
     @render.ui
@@ -448,6 +446,7 @@ def server(input, output, session):
     def process_data():
         import traceback
         import sys
+        import gc
 
         zip_info = input.zipfile()
         if zip_info is None or len(zip_info) == 0:
@@ -462,39 +461,9 @@ def server(input, output, session):
 
             # Verificar quais tabelas processar
             selected_tables = input.table_select()
-            process_pessoas = "pessoas" in selected_tables
-            process_veiculos = "veiculos" in selected_tables
-            process_sinistros = "sinistros" in selected_tables
-
             print(f"Tabelas selecionadas: {selected_tables}", file=sys.stderr)
 
-            # Leitura dos dados (apenas tabelas selecionadas)
-            data = {}
-
-            if process_pessoas:
-                processing_status.set("processing:Lendo dados de pessoas...")
-                print("Lendo dados de pessoas...", file=sys.stderr)
-                df_pessoas = read_infosiga(zip_path, "pessoas")
-                print(f"Pessoas: {len(df_pessoas)} registros", file=sys.stderr)
-                data["pessoas"] = df_pessoas
-
-            if process_veiculos:
-                processing_status.set("processing:Lendo dados de veículos...")
-                print("Lendo dados de veículos...", file=sys.stderr)
-                df_veiculos = read_infosiga(zip_path, "veiculos")
-                print(f"Veículos: {len(df_veiculos)} registros", file=sys.stderr)
-                data["veiculos"] = df_veiculos
-
-            if process_sinistros:
-                processing_status.set("processing:Lendo dados de sinistros...")
-                print("Lendo dados de sinistros...", file=sys.stderr)
-                df_sinistros = read_infosiga(zip_path, "sinistros")
-                print(f"Sinistros: {len(df_sinistros)} registros", file=sys.stderr)
-                data["sinistros"] = df_sinistros
-
-            processed_data_store.set(data)
-
-            # Geração dos relatórios de validação
+            # Configurações compartilhadas de validação
             processing_status.set("processing:Carregando configurações de validação...")
             print("Carregando configurações de validação...", file=sys.stderr)
             valid_data = create_valid_data()
@@ -503,61 +472,49 @@ def server(input, output, session):
 
             reports = {}
 
-            if process_pessoas:
+            # Pipeline por tabela: carrega → valida → gera HTML → libera memória
+            # antes da próxima tabela, para evitar manter os 3 DataFrames vivos ao
+            # mesmo tempo (issue #12).
+            def run_pipeline(name, reader_label, validator):
+                processing_status.set(f"processing:Lendo dados de {reader_label}...")
+                print(f"Lendo dados de {reader_label}...", file=sys.stderr)
+                df = read_infosiga(zip_path, name)
+                print(f"{name.capitalize()}: {len(df)} registros", file=sys.stderr)
+
+                processing_status.set(f"processing:Validando dados de {reader_label}...")
+                print(f"Gerando relatório de {reader_label}...", file=sys.stderr)
+                try:
+                    html = validator(df)
+                finally:
+                    del df
+                    gc.collect()
+                print(f"Relatório de {reader_label} concluído", file=sys.stderr)
+                reports[name] = html
+
+            if "pessoas" in selected_tables:
                 schema_pessoas = create_schema_pessoas()
-                processing_status.set("processing:Validando dados de pessoas...")
-                print("Gerando relatório de pessoas...", file=sys.stderr)
-                try:
-                    html_pessoas = create_pessoas_agent(
-                        data["pessoas"],
-                        valid_data,
-                        data_release,
-                        schema_pessoas,
-                        lista_municipios
-                    )
-                    print("Relatório de pessoas concluído", file=sys.stderr)
-                    reports["pessoas"] = html_pessoas
-                except Exception as e:
-                    print(f"ERRO no relatório de pessoas: {str(e)}", file=sys.stderr)
-                    print(traceback.format_exc(), file=sys.stderr)
-                    raise
+                run_pipeline(
+                    "pessoas",
+                    "pessoas",
+                    lambda df: create_pessoas_agent(df, valid_data, data_release, schema_pessoas, lista_municipios),
+                )
 
-            if process_veiculos:
+            if "veiculos" in selected_tables:
                 schema_veiculos = create_schema_veiculos()
-                processing_status.set("processing:Validando dados de veículos...")
-                print("Gerando relatório de veículos...", file=sys.stderr)
-                try:
-                    html_veiculos = create_veiculos_agent(
-                        data["veiculos"],
-                        valid_data,
-                        data_release,
-                        schema_veiculos
-                    )
-                    print("Relatório de veículos concluído", file=sys.stderr)
-                    reports["veiculos"] = html_veiculos
-                except Exception as e:
-                    print(f"ERRO no relatório de veículos: {str(e)}", file=sys.stderr)
-                    print(traceback.format_exc(), file=sys.stderr)
-                    raise
+                run_pipeline(
+                    "veiculos",
+                    "veículos",
+                    lambda df: create_veiculos_agent(df, valid_data, data_release, schema_veiculos),
+                )
 
-            if process_sinistros:
+            if "sinistros" in selected_tables:
                 schema_sinistros = create_schema_sinistros()
-                processing_status.set("processing:Validando dados de sinistros...")
-                print("Gerando relatório de sinistros...", file=sys.stderr)
-                try:
-                    html_sinistros = create_sinistros_agent(
-                        data["sinistros"],
-                        valid_data,
-                        data_release,
-                        schema_sinistros,
-                        lista_municipios
-                    )
-                    print("Relatório de sinistros concluído", file=sys.stderr)
-                    reports["sinistros"] = html_sinistros
-                except Exception as e:
-                    print(f"ERRO no relatório de sinistros: {str(e)}", file=sys.stderr)
-                    print(traceback.format_exc(), file=sys.stderr)
-                    raise
+                run_pipeline(
+                    "sinistros",
+                    "sinistros",
+                    lambda df: create_sinistros_agent(df, valid_data, data_release, schema_sinistros, lista_municipios),
+                )
+
             validation_reports_store.set(reports)
             validation_timestamp.set(datetime.now())
             processing_status.set("success")

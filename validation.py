@@ -203,6 +203,11 @@ def create_pessoas_agent(
             brief="`tipo_veiculo_vitima` deve ser NA quando `tipo_de_vitima` é 'PEDESTRE'"
         )
         .col_vals_expr(
+            expr=pl.col("tipo_veiculo_vitima").is_not_null() | pl.col("tipo_de_vitima").is_not_null(),
+            segments="gravidade_lesao",
+            brief="Se `tipo_veiculo_vitima` for NA, então `tipo_de_vitima` não pode ser NA"
+        )
+        .col_vals_expr(
             expr=(pl.col("local_obito") != "VIA") | (pl.col("tempo_sinistro_obito").fill_null(999) <= 1),
             brief="`tempo_sinistro_obito` deve ser <= 1 quando `local_obito` é 'VIA'"
         )
@@ -476,14 +481,20 @@ def create_sinistros_agent(
             brief="Inputs válidos de tp_sinistro_primario."
         )
         .col_vals_not_null(columns="tp_sinistro_primario", brief="`tp_sinistro_primario` não deve ter vazios")
-        .col_vals_gt(columns="qtd_pedestre", value=0, brief="`qtd_pedestre` > 0", na_pass=True)
-        .col_vals_gt(columns="qtd_bicicleta", value=0, brief="`qtd_bicicleta` > 0", na_pass=True)
-        .col_vals_gt(columns="qtd_motocicleta", value=0, brief="`qtd_motocicleta` > 0", na_pass=True)
-        .col_vals_gt(columns="qtd_automovel", value=0, brief="`qtd_automovel` > 0", na_pass=True)
-        .col_vals_gt(columns="qtd_onibus", value=0, brief="`qtd_onibus` > 0", na_pass=True)
-        .col_vals_gt(columns="qtd_caminhao", value=0, brief="`qtd_caminhao` > 0", na_pass=True)
-        .col_vals_gt(columns="qtd_veic_outros", value=0, brief="`qtd_veic_outros` > 0", na_pass=True)
-        .col_vals_gt(columns="qtd_veic_nao_disponivel", value=0, brief="`qtd_veic_nao_disponivel` > 0", na_pass=True)
+        .col_vals_expr(
+            expr=(
+                pl.col("qtd_pedestre").fill_null(0) +
+                pl.col("qtd_bicicleta").fill_null(0) +
+                pl.col("qtd_motocicleta").fill_null(0) +
+                pl.col("qtd_automovel").fill_null(0) +
+                pl.col("qtd_onibus").fill_null(0) +
+                pl.col("qtd_caminhao").fill_null(0) +
+                pl.col("qtd_veic_outros").fill_null(0) +
+                pl.col("qtd_veic_nao_disponivel").fill_null(0)
+            ) > 0,
+            segments="tipo_registro",
+            brief="Soma de `qtd_pedestre` + `qtd_bicicleta` + `qtd_motocicleta` + `qtd_automovel` + `qtd_onibus` + `qtd_caminhao` + `qtd_veic_outros` + `qtd_veic_nao_disponivel` deve ser > 0"
+        )
         .col_vals_gt(columns="qtd_gravidade_fatal", value=0, brief="`qtd_gravidade_fatal` > 0", na_pass=True)
         .col_vals_gt(columns="qtd_gravidade_grave", value=0, brief="`qtd_gravidade_grave` > 0", na_pass=True)
         .col_vals_gt(columns="qtd_gravidade_leve", value=0, brief="`qtd_gravidade_leve` > 0", na_pass=True)

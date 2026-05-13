@@ -242,7 +242,7 @@ def create_pessoas_agent(
     )
 
     print("[PESSOAS] Executando interrogate()...", file=sys.stderr)
-    agent = agent.interrogate()
+    agent = agent.interrogate(collect_tbl_checked=False)
     print("[PESSOAS] Gerando relatório tabular...", file=sys.stderr)
     report = agent.get_tabular_report(title="Dados abertos Infosiga - Validação da tabela 'pessoas'")
     html_result = report._repr_html_()
@@ -334,7 +334,7 @@ def create_veiculos_agent(
     )
 
     print("[VEICULOS] Executando interrogate()...", file=sys.stderr)
-    agent = agent.interrogate()
+    agent = agent.interrogate(collect_tbl_checked=False)
     print("[VEICULOS] Gerando relatório tabular...", file=sys.stderr)
     report = agent.get_tabular_report(title="Dados abertos Infosiga - Validação da tabela 'veiculos'")
     html_result = report._repr_html_()
@@ -578,7 +578,7 @@ def create_sinistros_agent(
         )
 
     print("[SINISTROS] Executando interrogate()...", file=sys.stderr)
-    agent = agent.interrogate()
+    agent = agent.interrogate(collect_tbl_checked=False)
     print("[SINISTROS] Gerando relatório tabular...", file=sys.stderr)
     report = agent.get_tabular_report(title="Dados abertos Infosiga - Validação da tabela 'sinistros'")
     html_result = report._repr_html_()

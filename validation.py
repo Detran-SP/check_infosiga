@@ -482,16 +482,20 @@ def create_sinistros_agent(
         )
         .col_vals_not_null(columns="tp_sinistro_primario", brief="`tp_sinistro_primario` não deve ter vazios")
         .col_vals_expr(
-            expr=(
-                pl.col("qtd_pedestre").fill_null(0) +
-                pl.col("qtd_bicicleta").fill_null(0) +
-                pl.col("qtd_motocicleta").fill_null(0) +
-                pl.col("qtd_automovel").fill_null(0) +
-                pl.col("qtd_onibus").fill_null(0) +
-                pl.col("qtd_caminhao").fill_null(0) +
-                pl.col("qtd_veic_outros").fill_null(0) +
-                pl.col("qtd_veic_nao_disponivel").fill_null(0)
-            ) > 0,
+            expr=pl.col("_qtd_total") > 0,
+            pre=lambda df: df.select([
+                "tipo_registro",
+                (
+                    pl.col("qtd_pedestre").fill_null(0) +
+                    pl.col("qtd_bicicleta").fill_null(0) +
+                    pl.col("qtd_motocicleta").fill_null(0) +
+                    pl.col("qtd_automovel").fill_null(0) +
+                    pl.col("qtd_onibus").fill_null(0) +
+                    pl.col("qtd_caminhao").fill_null(0) +
+                    pl.col("qtd_veic_outros").fill_null(0) +
+                    pl.col("qtd_veic_nao_disponivel").fill_null(0)
+                ).alias("_qtd_total"),
+            ]),
             segments="tipo_registro",
             brief="Soma de `qtd_pedestre` + `qtd_bicicleta` + `qtd_motocicleta` + `qtd_automovel` + `qtd_onibus` + `qtd_caminhao` + `qtd_veic_outros` + `qtd_veic_nao_disponivel` deve ser > 0"
         )

@@ -161,6 +161,7 @@ def create_valid_data() -> Dict[str, List[str]]:
 def create_schema_pessoas() -> pb.Schema:
     return pb.Schema(columns={
         "id_sinistro": "Int64",
+        "id_pessoa": "Int64",
         "id_veiculo": "Int64",
         "cod_ibge": "Int64",
         "municipio": "String",

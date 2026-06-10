@@ -34,7 +34,7 @@ def read_infosiga(path: str, file: Literal["pessoas", "veiculos", "sinistros"]) 
 
         elif file == "pessoas":
             int_columns = [
-                "id_sinistro", "id_veiculo", "cod_ibge", "idade",
+                "id_sinistro", "id_pessoa", "id_veiculo", "cod_ibge", "idade",
                 "ano_sinistro", "mes_sinistro", "dia_sinistro",
                 "ano_obito", "mes_obito", "dia_obito", "tempo_sinistro_obito",
             ]

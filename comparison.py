@@ -139,6 +139,7 @@ def _build_table_section(table: str, reports: List[Dict]) -> str:
     # que só aparecem em meses anteriores são acrescentadas ao final.
     row_order: List[tuple] = []
     row_labels: Dict[tuple, str] = {}
+    row_ids: Dict[tuple, object] = {}
     seen = set()
     for month in reversed(months):
         for step in reps_by_month[month]["steps"]:
@@ -147,6 +148,7 @@ def _build_table_section(table: str, reports: List[Dict]) -> str:
                 seen.add(key)
                 row_order.append(key)
                 row_labels[key] = _step_label(step)
+                row_ids[key] = step.get("i")
 
     # Mapa: mês -> {chave -> step}
     steps_by_month: Dict[str, Dict[tuple, Dict]] = {
@@ -156,7 +158,7 @@ def _build_table_section(table: str, reports: List[Dict]) -> str:
 
     # Cabeçalho
     header_cells = "".join(f"<th>{_month_label(m)}</th>" for m in months)
-    head = f"<tr><th class='check-col'>Checagem</th>{header_cells}</tr>"
+    head = f"<tr><th class='id-col'>Nº</th><th class='check-col'>Checagem</th>{header_cells}</tr>"
 
     # Linhas
     body_rows = []
@@ -179,7 +181,12 @@ def _build_table_section(table: str, reports: List[Dict]) -> str:
             cells.append(f"<td{cls}>{_format_cell(step)}</td>")
             prev_failed = n_failed if isinstance(n_failed, int) else None
         label = row_labels[key]
-        body_rows.append(f"<tr><td class='check-col'>{label}</td>{''.join(cells)}</tr>")
+        step_id = row_ids[key]
+        id_txt = "" if step_id is None else step_id
+        body_rows.append(
+            f"<tr><td class='id-col'>{id_txt}</td>"
+            f"<td class='check-col'>{label}</td>{''.join(cells)}</tr>"
+        )
 
     return f"""
 <div class="cmp-section">
@@ -212,6 +219,11 @@ COMPARISON_CSS = """
     white-space: nowrap;
 }
 .cmp-table th { background: #f8f9fa; font-weight: 600; color: #212529; }
+.cmp-table td.id-col, .cmp-table th.id-col {
+    width: 3rem;
+    color: #6c757d;
+    font-variant-numeric: tabular-nums;
+}
 .cmp-table td.check-col, .cmp-table th.check-col {
     text-align: left;
     white-space: normal;

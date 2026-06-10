@@ -364,9 +364,9 @@ app_ui = ui.page_bootstrap(
             ),
             ui.p(
                 {"class": "cmp-hint"},
-                "Envie um ou mais relatórios JSON exportados em meses anteriores "
-                "(presentes no ZIP de download). Eles serão comparados entre si e "
-                "com o resultado da validação atual, se houver."
+                "Envie dois ou mais relatórios JSON (presentes no ZIP de download) "
+                "para comparar a evolução das checagens mês a mês. A tabela é "
+                "gerada a partir dos arquivos importados."
             ),
             ui.input_file(
                 "comparison_jsons",
@@ -757,11 +757,6 @@ def server(input, output, session):
                 except (ValueError, OSError, UnicodeDecodeError) as e:
                     errors.append(f"{fname}: {e}")
 
-        # Inclui os resultados da validação atual, se houver.
-        current = validation_json_store()
-        if current:
-            reports.extend(current.values())
-
         children = []
         if errors:
             children.append(
@@ -778,9 +773,9 @@ def server(input, output, session):
                 ui.div(
                     {"class": "alert alert-info"},
                     ui.tags.i({"class": "fas fa-info-circle me-2"}),
-                    "Envie ao menos um relatório JSON (ou rode uma validação) para "
-                    "ver a comparação. As células mostram o nº de falhas e o "
-                    "percentual de unidades que falharam em cada checagem."
+                    "Importe os relatórios JSON acima para ver a comparação. As "
+                    "células mostram o nº de falhas e o percentual de unidades que "
+                    "falharam em cada checagem."
                 )
             )
             return ui.div(*children)

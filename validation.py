@@ -118,6 +118,7 @@ def create_pessoas_agent(
         .col_vals_in_set(
             columns="grau_de_instrucao",
             set=[v for v in valid_data["lista_grau_de_instrucao"] if v is not None],
+            pre=lambda df: df.filter(pl.col("grau_de_instrucao").is_not_null()),
             brief="Inputs válidos de `grau_de_instrucao`"
         )
         .col_vals_between(

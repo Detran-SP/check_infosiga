@@ -2,10 +2,12 @@ from shiny import App, ui, render, reactive
 import tempfile
 import zipfile
 import os
+import json
 from datetime import date, datetime
 from data_processing import read_infosiga
 from schemas import create_valid_data, create_schema_pessoas, create_schema_veiculos, create_schema_sinistros, load_municipios
 from validation import create_pessoas_agent, create_veiculos_agent, create_sinistros_agent
+from comparison import wrap_report, parse_report, build_comparison_html, COMPARISON_CSS
 
 def _read_version() -> str:
     import tomllib, pathlib
@@ -278,7 +280,34 @@ body {
 .table-selection select:focus {
     border-color: #212529;
 }
-"""
+
+.comparison-card {
+    background: transparent;
+    border: 2px solid #dee2e6;
+    border-radius: 10px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+.comparison-card > label {
+    font-weight: 600;
+    color: #212529;
+    margin-bottom: 1rem;
+    display: block;
+    font-size: 1rem;
+}
+
+.comparison-card h2 {
+    font-weight: 700;
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.comparison-card .cmp-hint {
+    color: #6c757d;
+    margin-bottom: 1.5rem;
+}
+""" + COMPARISON_CSS
 
 app_ui = ui.page_bootstrap(
     ui.tags.head(
@@ -326,7 +355,32 @@ app_ui = ui.page_bootstrap(
             ui.output_ui("status_message")
         ),
         ui.output_ui("download_section"),
-        ui.output_ui("reports_tabs")
+        ui.output_ui("reports_tabs"),
+        ui.div(
+            {"class": "comparison-card"},
+            ui.h2(
+                ui.tags.i({"class": "fas fa-chart-line me-2"}),
+                "Comparação mês a mês"
+            ),
+            ui.p(
+                {"class": "cmp-hint"},
+                "Envie um ou mais relatórios JSON exportados em meses anteriores "
+                "(presentes no ZIP de download). Eles serão comparados entre si e "
+                "com o resultado da validação atual, se houver."
+            ),
+            ui.input_file(
+                "comparison_jsons",
+                ui.tags.span(
+                    ui.tags.i({"class": "fas fa-file-code me-2"}),
+                    "Relatórios JSON anteriores"
+                ),
+                accept=[".json"],
+                multiple=True,
+                button_label="Selecionar Arquivos",
+                placeholder="Nenhum arquivo selecionado"
+            ),
+            ui.output_ui("comparison_ui")
+        )
     ),
     title="Validação Infosiga"
 )
@@ -334,6 +388,7 @@ app_ui = ui.page_bootstrap(
 def server(input, output, session):
     # Estado para armazenar dados processados
     validation_reports_store = reactive.value(None)
+    validation_json_store = reactive.value(None)
     processing_status = reactive.value("")
     validation_timestamp = reactive.value(None)
 
@@ -351,6 +406,7 @@ def server(input, output, session):
         """Reset status when a new file is uploaded"""
         processing_status.set("")
         validation_reports_store.set(None)
+        validation_json_store.set(None)
 
     @output
     @render.ui
@@ -471,6 +527,7 @@ def server(input, output, session):
             data_release = input.data_release()
 
             reports = {}
+            json_reports = {}
 
             # Pipeline por tabela: carrega → valida → gera HTML → libera memória
             # antes da próxima tabela, para evitar manter os 3 DataFrames vivos ao
@@ -484,12 +541,13 @@ def server(input, output, session):
                 processing_status.set(f"processing:Validando dados de {reader_label}...")
                 print(f"Gerando relatório de {reader_label}...", file=sys.stderr)
                 try:
-                    html = validator(df)
+                    html, json_str = validator(df)
                 finally:
                     del df
                     gc.collect()
                 print(f"Relatório de {reader_label} concluído", file=sys.stderr)
                 reports[name] = html
+                json_reports[name] = wrap_report(name, data_release, json_str, APP_VERSION)
 
             if "pessoas" in selected_tables:
                 schema_pessoas = create_schema_pessoas()
@@ -516,6 +574,7 @@ def server(input, output, session):
                 )
 
             validation_reports_store.set(reports)
+            validation_json_store.set(json_reports)
             validation_timestamp.set(datetime.now())
             processing_status.set("success")
             print("Processamento concluído com sucesso!", file=sys.stderr)
@@ -584,13 +643,25 @@ def server(input, output, session):
         temp_zip = tempfile.NamedTemporaryFile(delete=False, suffix=".zip")
         temp_zip.close()
 
+        json_reports = validation_json_store() or {}
+
+        def write_json(zf, name):
+            rep = json_reports.get(name)
+            if rep is None:
+                return
+            mes = rep["data_release"][:7]  # YYYY-MM
+            zf.writestr(f"dados_{name}_{mes}.json", json.dumps(rep, ensure_ascii=False, indent=2))
+
         with zipfile.ZipFile(temp_zip.name, "w", zipfile.ZIP_DEFLATED) as zf:
             if "sinistros" in reports:
                 zf.writestr("relatorio_sinistros.html", inject_css(reports["sinistros"]))
+                write_json(zf, "sinistros")
             if "veiculos" in reports:
                 zf.writestr("relatorio_veiculos.html", inject_css(reports["veiculos"]))
+                write_json(zf, "veiculos")
             if "pessoas" in reports:
                 zf.writestr("relatorio_pessoas.html", inject_css(reports["pessoas"]))
+                write_json(zf, "pessoas")
 
         with open(temp_zip.name, "rb") as f:
             yield f.read()
@@ -669,5 +740,52 @@ def server(input, output, session):
             )
 
         return ui.navset_tab(*tabs, id="report_tabs")
+
+    @output
+    @render.ui
+    def comparison_ui():
+        uploaded = input.comparison_jsons()
+
+        reports = []
+        errors = []
+        if uploaded:
+            for file_info in uploaded:
+                fname = file_info["name"]
+                try:
+                    with open(file_info["datapath"], "r", encoding="utf-8") as f:
+                        reports.append(parse_report(f.read()))
+                except (ValueError, OSError, UnicodeDecodeError) as e:
+                    errors.append(f"{fname}: {e}")
+
+        # Inclui os resultados da validação atual, se houver.
+        current = validation_json_store()
+        if current:
+            reports.extend(current.values())
+
+        children = []
+        if errors:
+            children.append(
+                ui.div(
+                    {"class": "alert alert-danger"},
+                    ui.tags.i({"class": "fas fa-exclamation-triangle me-2"}),
+                    ui.tags.strong("Arquivos ignorados:"),
+                    ui.tags.ul(*[ui.tags.li(msg) for msg in errors])
+                )
+            )
+
+        if not reports:
+            children.append(
+                ui.div(
+                    {"class": "alert alert-info"},
+                    ui.tags.i({"class": "fas fa-info-circle me-2"}),
+                    "Envie ao menos um relatório JSON (ou rode uma validação) para "
+                    "ver a comparação. As células mostram o nº de falhas e o "
+                    "percentual de unidades que falharam em cada checagem."
+                )
+            )
+            return ui.div(*children)
+
+        children.append(ui.HTML(build_comparison_html(reports)))
+        return ui.div(*children)
 
 app = App(app_ui, server)

@@ -12,7 +12,7 @@ def create_pessoas_agent(
     data_release: date,
     schema: pb.Schema,
     lista_municipios: List[str],
-) -> str:
+) -> tuple[str, str]:
     import sys
 
     print(f"[PESSOAS] Iniciando validação de {len(df_pessoas)} registros", file=sys.stderr)
@@ -247,8 +247,9 @@ def create_pessoas_agent(
     print("[PESSOAS] Gerando relatório tabular...", file=sys.stderr)
     report = agent.get_tabular_report(title="Dados abertos Infosiga - Validação da tabela 'pessoas'")
     html_result = report._repr_html_()
+    json_result = agent.get_json_report()
     print(f"[PESSOAS] Validação concluída. HTML size: {len(html_result)} chars", file=sys.stderr)
-    return html_result
+    return html_result, json_result
 
 
 def create_veiculos_agent(
@@ -256,7 +257,7 @@ def create_veiculos_agent(
     valid_data: Dict,
     data_release: date,
     schema: pb.Schema,
-) -> str:
+) -> tuple[str, str]:
     import sys
 
     print(f"[VEICULOS] Iniciando validação de {len(df_veiculos)} registros", file=sys.stderr)
@@ -339,8 +340,9 @@ def create_veiculos_agent(
     print("[VEICULOS] Gerando relatório tabular...", file=sys.stderr)
     report = agent.get_tabular_report(title="Dados abertos Infosiga - Validação da tabela 'veiculos'")
     html_result = report._repr_html_()
+    json_result = agent.get_json_report()
     print(f"[VEICULOS] Validação concluída. HTML size: {len(html_result)} chars", file=sys.stderr)
-    return html_result
+    return html_result, json_result
 
 
 def create_sinistros_agent(
@@ -349,7 +351,7 @@ def create_sinistros_agent(
     data_release: date,
     schema: pb.Schema,
     lista_municipios: List[str],
-) -> str:
+) -> tuple[str, str]:
     import sys
 
     print(f"[SINISTROS] Iniciando validação de {len(df_sinistros)} registros", file=sys.stderr)
@@ -583,5 +585,6 @@ def create_sinistros_agent(
     print("[SINISTROS] Gerando relatório tabular...", file=sys.stderr)
     report = agent.get_tabular_report(title="Dados abertos Infosiga - Validação da tabela 'sinistros'")
     html_result = report._repr_html_()
+    json_result = agent.get_json_report()
     print(f"[SINISTROS] Validação concluída. HTML size: {len(html_result)} chars", file=sys.stderr)
-    return html_result
+    return html_result, json_result

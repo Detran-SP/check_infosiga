@@ -76,6 +76,7 @@ def create_pessoas_agent(
         .col_vals_in_set(
             columns="tipo_veiculo_vitima",
             set=valid_data["lista_tipo_veiculo_vitima"],
+            pre=lambda df: df.filter(pl.col("tipo_veiculo_vitima").is_not_null()),
             brief="Garante os valores de `tipo_veiculo_vitima`"
         )
         .col_vals_in_set(
@@ -191,6 +192,7 @@ def create_pessoas_agent(
         .col_vals_in_set(
             columns="local_via",
             set=valid_data["lista_tipo_local"],
+            pre=lambda df: df.filter(pl.col("local_via").is_not_null()),
             brief="Valida com base em `local_via`"
         )
         .col_vals_between(
@@ -439,6 +441,7 @@ def create_sinistros_agent(
         .col_vals_in_set(
             columns="tipo_local",
             set=valid_data["lista_tipo_local"],
+            pre=lambda df: df.filter(pl.col("tipo_local").is_not_null()),
             brief="Inputs válidos de `tipo_local`"
         )
         .col_vals_between(
@@ -472,11 +475,13 @@ def create_sinistros_agent(
         .col_vals_in_set(
             columns="administracao",
             set=valid_data["lista_administracao"],
+            pre=lambda df: df.filter(pl.col("administracao").is_not_null()),
             brief="Inputs válidos de `administracao`"
         )
         .col_vals_in_set(
             columns="circunscricao",
             set=valid_data["lista_circunscricao"],
+            pre=lambda df: df.filter(pl.col("circunscricao").is_not_null()),
             brief="Inputs válidos de `circunscricao`"
         )
         .col_vals_in_set(

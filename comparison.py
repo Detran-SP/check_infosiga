@@ -86,11 +86,21 @@ def _step_key(step: Dict) -> tuple:
 
 
 def _step_label(step: Dict) -> str:
-    brief = step.get("brief") or f"{step.get('assertion_type')} ({step.get('column')})"
+    # O número exibido na comparação é a contagem de falhas (inputs inválidos);
+    # as checagens da família "válidos" são reescritas para refletir isso (issue #24).
+    brief = (
+        step.get("brief") or f"{step.get('assertion_type')} ({step.get('column')})"
+    ).replace("válidos", "inválidos")
     segments = step.get("segments")
     if isinstance(segments, list) and len(segments) == 2:
         return f"{brief} [segmento {segments[0]} = {segments[1]}]"
     return brief
+
+
+def _pct1(step: Dict):
+    """Percentual de falhas arredondado a 1 casa, ou None se indisponível."""
+    f = step.get("f_failed")
+    return round(f * 100, 1) if isinstance(f, (int, float)) else None
 
 
 def _format_cell(step: Dict) -> str:
@@ -164,22 +174,22 @@ def _build_table_section(table: str, reports: List[Dict]) -> str:
     body_rows = []
     for key in row_order:
         cells = []
-        prev_failed = None
+        prev_pct = None
         for month in months:
             step = steps_by_month[month].get(key)
             if step is None:
                 cells.append("<td class='cmp-missing'></td>")
-                prev_failed = None
+                prev_pct = None
                 continue
-            n_failed = step.get("n_failed")
+            pct = _pct1(step)
             cls = ""
-            if prev_failed is not None and isinstance(n_failed, int):
-                if n_failed > prev_failed:
+            if prev_pct is not None and pct is not None:
+                if pct > prev_pct:
                     cls = " class='cmp-worse'"
-                elif n_failed < prev_failed:
+                elif pct < prev_pct:
                     cls = " class='cmp-better'"
             cells.append(f"<td{cls}>{_format_cell(step)}</td>")
-            prev_failed = n_failed if isinstance(n_failed, int) else None
+            prev_pct = pct
         label = row_labels[key]
         step_id = row_ids[key]
         id_txt = "" if step_id is None else step_id

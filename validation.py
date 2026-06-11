@@ -185,7 +185,8 @@ def create_pessoas_agent(
         .col_vals_in_set(
             columns="local_obito",
             set=valid_data["lista_local_obito"],
-            brief="Valida com base em `local_obito`"
+            pre=lambda df: df.filter(pl.col("gravidade_lesao") == "FATAL"),
+            brief="Valida com base em `local_obito` (apenas vítimas fatais)"
         )
         .col_vals_in_set(
             columns="local_via",

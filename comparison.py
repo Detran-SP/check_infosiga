@@ -86,11 +86,9 @@ def _step_key(step: Dict) -> tuple:
 
 
 def _step_label(step: Dict) -> str:
-    # O número exibido na comparação é a contagem de falhas (inputs inválidos);
-    # as checagens da família "válidos" são reescritas para refletir isso (issue #24).
-    brief = (
-        step.get("brief") or f"{step.get('assertion_type')} ({step.get('column')})"
-    ).replace("válidos", "inválidos")
+    # Mantém o texto original da checagem; que os números são falhas é comunicado
+    # pelo cabeçalho "Falhas" acima das colunas de meses.
+    brief = step.get("brief") or f"{step.get('assertion_type')} ({step.get('column')})"
     segments = step.get("segments")
     if isinstance(segments, list) and len(segments) == 2:
         return f"{brief} [segmento {segments[0]} = {segments[1]}]"
@@ -168,7 +166,14 @@ def _build_table_section(table: str, reports: List[Dict]) -> str:
 
     # Cabeçalho
     header_cells = "".join(f"<th>{_month_label(m)}</th>" for m in months)
-    head = f"<tr><th class='id-col'>Nº</th><th class='check-col'>Checagem</th>{header_cells}</tr>"
+    head = (
+        f"<tr>"
+        f"<th class='id-col' rowspan='2'>Nº</th>"
+        f"<th class='check-col' rowspan='2'>Checagem</th>"
+        f"<th colspan='{len(months)}'>Falhas</th>"
+        f"</tr>"
+        f"<tr>{header_cells}</tr>"
+    )
 
     # Linhas
     body_rows = []

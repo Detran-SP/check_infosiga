@@ -224,7 +224,7 @@ def create_schema_sinistros() -> pb.Schema:
         "dia_da_semana": "String",
         "turno": "String",
         "logradouro": "String",
-        "numero_logradouro": "Int64",
+        "numero_logradouro": "Float64",
         "tipo_via": "String",
         "tipo_local": "String",
         "latitude": "Float64",

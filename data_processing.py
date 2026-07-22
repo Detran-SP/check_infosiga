@@ -27,9 +27,8 @@ def read_infosiga(path: str, file: Literal["pessoas", "veiculos", "sinistros"]) 
                 "qtd_automovel", "qtd_onibus", "qtd_caminhao", "qtd_veic_outros",
                 "qtd_veic_nao_disponivel", "qtd_gravidade_fatal", "qtd_gravidade_grave",
                 "qtd_gravidade_leve", "qtd_gravidade_ileso", "qtd_gravidade_nao_disponivel",
-                "numero_logradouro",
             ]
-            float_columns = ["latitude", "longitude"]
+            float_columns = ["numero_logradouro", "latitude", "longitude"]
             date_columns = ["data_sinistro"]
             time_columns = ["hora_sinistro"]
 

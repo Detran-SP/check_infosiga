@@ -532,8 +532,12 @@ def create_sinistros_agent(
             brief="`qtd_gravidade_fatal` não deve ter vazios quando `tipo_registro` é 'SINISTRO FATAL'"
         )
         .col_vals_expr(
-            expr=(pl.col("tipo_registro") == "NOTIFICACAO") | (pl.col("tp_sinistro_primario") != "ATROPELAMENTO") | pl.col("tp_sinistro_atropelamento").is_not_null(),
-            brief="`tp_sinistro_atropelamento` não deve ter vazios quando `tp_sinistro_primario` é 'ATROPELAMENTO'"
+            expr=(pl.col("tipo_registro") == "NOTIFICACAO") | (pl.col("tp_sinistro_primario") != "ATROPELAMENTO") | (
+                (pl.col("tp_sinistro_atrop_pedestre") == "S") |
+                (pl.col("tp_sinistro_atrop_vitima_fora_veic") == "S") |
+                (pl.col("tp_sinistro_atrop_animal") == "S")
+            ),
+            brief="Ao menos uma variável de atropelamento deve ter valor 'S' quando `tp_sinistro_primario` é 'ATROPELAMENTO'"
         )
         .col_vals_expr(
             expr=(pl.col("tipo_registro") == "NOTIFICACAO") | (pl.col("tp_sinistro_primario") != "CHOQUE") | pl.col("tp_sinistro_choque").is_not_null(),
@@ -574,7 +578,8 @@ def create_sinistros_agent(
     )
 
     for col in [
-        "tp_sinistro_atropelamento", "tp_sinistro_choque",
+        "tp_sinistro_atrop_pedestre", "tp_sinistro_atrop_vitima_fora_veic",
+        "tp_sinistro_atrop_animal", "tp_sinistro_choque",
         "tp_sinistro_colisao_frontal", "tp_sinistro_colisao_traseira",
         "tp_sinistro_colisao_lateral", "tp_sinistro_colisao_transversal",
         "tp_sinistro_colisao_outros", "tp_sinistro_capotamento",

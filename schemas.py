@@ -88,7 +88,7 @@ def create_valid_data() -> Dict[str, List[str]]:
             "NAO DISPONIVEL"
         ],
         "lista_sexo": ["FEMININO", "MASCULINO", "NAO DISPONIVEL"],
-        "lista_gravidade_lesao": ["FATAL", "GRAVE", "LEVE", "NAO DISPONIVEL"],
+        "lista_gravidade_lesao": ["FATAL", "GRAVE", "LEVE", "ILESO", "NAO DISPONIVEL"],
         "lista_tipo_vitima": [
             "CONDUTOR",
             "PASSAGEIRO",

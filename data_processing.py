@@ -6,19 +6,26 @@ from typing import Literal
 
 
 def read_infosiga(path: str, file: Literal["pessoas", "veiculos", "sinistros"]) -> pl.DataFrame:
-    temp_dir = tempfile.mkdtemp()
+    temp_dir = None
     try:
-        with zipfile.ZipFile(path, "r") as zip_ref:
-            zip_ref.extractall(temp_dir)
+        if os.path.isdir(path):
+            search_dir = path
+        elif zipfile.is_zipfile(path):
+            temp_dir = tempfile.mkdtemp()
+            with zipfile.ZipFile(path, "r") as zip_ref:
+                zip_ref.extractall(temp_dir)
+            search_dir = temp_dir
+        else:
+            raise FileNotFoundError(f"Caminho '{path}' não é um arquivo ZIP nem um diretório válido.")
 
         path_files = sorted(
-            os.path.join(temp_dir, f)
-            for f in os.listdir(temp_dir)
-            if file in f.lower()
+            os.path.join(search_dir, f)
+            for f in os.listdir(search_dir)
+            if file in f.lower() and f.lower().endswith(".csv")
         )
 
         if not path_files:
-            raise FileNotFoundError(f"Arquivo '{file}' não encontrado no ZIP")
+            raise FileNotFoundError(f"Arquivo '{file}' não encontrado em '{path}'")
 
         if file == "sinistros":
             int_columns = [
@@ -87,5 +94,6 @@ def read_infosiga(path: str, file: Literal["pessoas", "veiculos", "sinistros"]) 
         return df
 
     finally:
-        import shutil
-        shutil.rmtree(temp_dir, ignore_errors=True)
+        if temp_dir:
+            import shutil
+            shutil.rmtree(temp_dir, ignore_errors=True)

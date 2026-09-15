@@ -511,7 +511,7 @@ def create_sinistros_agent(
         .col_vals_gt(columns="qtd_gravidade_fatal", value=0, brief="`qtd_gravidade_fatal` > 0", na_pass=True)
         .col_vals_gt(columns="qtd_gravidade_grave", value=0, brief="`qtd_gravidade_grave` > 0", na_pass=True)
         .col_vals_gt(columns="qtd_gravidade_leve", value=0, brief="`qtd_gravidade_leve` > 0", na_pass=True)
-        .col_vals_null(columns="qtd_gravidade_ileso", brief="`qtd_gravidade_ileso` é sempre vazio.")
+        .col_vals_gt(columns="qtd_gravidade_ileso", value=0, brief="`qtd_gravidade_ileso` > 0", na_pass=True)
         .col_vals_gt(columns="qtd_gravidade_nao_disponivel", value=0, brief="`qtd_gravidade_nao_disponivel` > 0", na_pass=True)
         .col_vals_not_null(
             columns="latitude",
